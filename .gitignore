@@ -11,3 +11,6 @@ wheels/
 
 # Local env
 .env
+
+db-generation/
+.ruff_cache/

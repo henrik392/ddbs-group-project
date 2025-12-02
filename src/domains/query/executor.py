@@ -30,7 +30,46 @@ class QueryExecutor:
                 target_results = self._execute_on_dbms(target, sql)
                 results.extend(target_results)
 
+        elif routing_plan["strategy"] == "join":
+            # Execute join query (Popular-Rank with Article details)
+            results = self._execute_join(routing_plan)
+
         return results
+
+    def _execute_join(self, routing_plan: dict[str, Any]) -> list[dict[str, Any]]:
+        """Execute distributed join for Popular-Rank + Article."""
+        # Step 1: Get Popular-Rank data
+        rank_target = routing_plan["rank_target"]
+        rank_query = routing_plan["rank_query"]
+        rank_results = self._execute_on_dbms(rank_target, rank_query)
+
+        if not rank_results:
+            return []
+
+        # Step 2: Extract article IDs from ranking
+        article_aids = rank_results[0]["articleaidlist"].split(",")
+
+        # Step 3: Fetch article details for those IDs
+        aids_str = ",".join(f"'{aid}'" for aid in article_aids)
+        article_query = (
+            f'SELECT aid, title, category, abstract, text, image, video FROM "article" '
+            f"WHERE aid IN ({aids_str})"
+        )
+
+        # Query both DBMS to get all articles
+        article_results = []
+        for target in ["DBMS1", "DBMS2"]:
+            target_results = self._execute_on_dbms(target, article_query)
+            article_results.extend(target_results)
+
+        # Step 4: Merge ranking with article details (maintain order)
+        merged = []
+        article_map = {str(a["aid"]): a for a in article_results}
+        for aid in article_aids:
+            if aid in article_map:
+                merged.append(article_map[aid])
+
+        return merged
 
     def _execute_on_dbms(self, dbms: str, sql: str) -> list[dict[str, Any]]:
         """Execute SQL on specific DBMS."""

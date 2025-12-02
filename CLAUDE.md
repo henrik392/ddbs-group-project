@@ -1,1 +1,2 @@
 - Use `ruff format` and `ruff check`
+- Use docs/PLAN.md

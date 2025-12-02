@@ -14,3 +14,4 @@ wheels/
 
 db-generation/
 .ruff_cache/
+generated_data/

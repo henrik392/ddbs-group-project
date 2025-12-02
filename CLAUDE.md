@@ -1,0 +1,1 @@
+- Use `ruff format` and `ruff check`

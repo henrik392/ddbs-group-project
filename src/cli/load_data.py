@@ -44,7 +44,7 @@ def bulk_load(sql_dir: Path):
             sql = file_path.read_text()
 
             if not sql.strip() or "INSERT INTO" not in sql:
-                print(f"    → Empty or invalid, skipped")
+                print("    → Empty or invalid, skipped")
                 continue
 
             try:
@@ -83,7 +83,7 @@ def bulk_load(sql_dir: Path):
             sql = file_path.read_text()
 
             if not sql.strip() or "INSERT INTO" not in sql:
-                print(f"    → Empty or invalid, skipped")
+                print("    → Empty or invalid, skipped")
                 continue
 
             try:

@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.domains.query.coordinator import QueryCoordinator
+from src.domains.query.executor import QueryExecutor
 
 
 @click.group()
@@ -90,6 +91,58 @@ def execute(sql, interactive, no_cache):
 
 
 @cli.command()
+@click.option(
+    "--granularity",
+    "-g",
+    type=click.Choice(["daily", "weekly", "monthly"]),
+    default="daily",
+    help="Temporal granularity",
+)
+def top5(granularity):
+    """Query top-5 popular articles with details."""
+    executor = QueryExecutor()
+
+    # Determine which DBMS has the ranking
+    if granularity == "daily":
+        rank_target = "DBMS1"
+    else:
+        rank_target = "DBMS2"
+
+    # Create routing plan for distributed join
+    routing_plan = {
+        "strategy": "join",
+        "rank_target": rank_target,
+        "rank_query": f"SELECT articleAidList FROM \"popular_rank\" WHERE temporalGranularity='{granularity}'",
+    }
+
+    print(f"Querying top-5 {granularity} popular articles...\n")
+
+    try:
+        results = executor.execute(routing_plan)
+
+        if not results:
+            print("No results found")
+            return
+
+        print(f"Top-5 {granularity} popular articles:\n")
+        for i, article in enumerate(results, 1):
+            print(f"{i}. Article {article['aid']}: {article.get('title', 'N/A')}")
+            print(f"   Category: {article.get('category', 'N/A')}")
+            print(f"   Abstract: {article.get('abstract', 'N/A')[:100]}...")
+            if article.get("text"):
+                print("   Text: Available")
+            if article.get("image"):
+                print(f"   Image: {article['image']}")
+            if article.get("video"):
+                print(f"   Video: {article['video']}")
+            print()
+
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+@cli.command()
 def examples():
     """Show example queries."""
     print("Example Distributed Queries:\n")
@@ -127,13 +180,23 @@ def examples():
             "8. Query reads (distributed)",
             'SELECT id, uid, aid, agreeOrNot FROM "user_read" LIMIT 5',
         ),
+        (
+            "9. Query Popular-Rank (by granularity)",
+            "SELECT * FROM \"popular_rank\" WHERE temporalGranularity='daily'",
+        ),
     ]
 
     for title, query in examples_list:
         print(f"{title}")
         print(f"  {query}\n")
 
-    print("\nTo execute a query:")
+    print("\nSpecial Commands:")
+    print("  Top-5 popular articles:")
+    print("    uv run python src/cli/query.py top5 --granularity daily")
+    print("    uv run python src/cli/query.py top5 -g weekly")
+    print("    uv run python src/cli/query.py top5 -g monthly\n")
+
+    print("To execute a query:")
     print('  uv run python src/cli/query.py execute --sql "<query>"')
     print("\nTo start interactive mode:")
     print("  uv run python src/cli/query.py execute --interactive")

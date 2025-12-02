@@ -18,9 +18,7 @@ def init_databases():
     # Initialize DBMS1
     print("Initializing DBMS1 (Beijing)...")
     try:
-        with psycopg.connect(
-            "postgresql://ddbs:ddbs@localhost:5434/ddbs1"
-        ) as conn:
+        with psycopg.connect("postgresql://ddbs:ddbs@localhost:5434/ddbs1") as conn:
             with conn.cursor() as cur:
                 cur.execute(schema_sql)
             conn.commit()
@@ -32,9 +30,7 @@ def init_databases():
     # Initialize DBMS2
     print("Initializing DBMS2 (Hong Kong)...")
     try:
-        with psycopg.connect(
-            "postgresql://ddbs:ddbs@localhost:5433/ddbs2"
-        ) as conn:
+        with psycopg.connect("postgresql://ddbs:ddbs@localhost:5433/ddbs2") as conn:
             with conn.cursor() as cur:
                 cur.execute(schema_sql)
             conn.commit()

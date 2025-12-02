@@ -1,107 +1,104 @@
 # Distributed Database System
 
-A distributed database management system implementing horizontal fragmentation, replication, and distributed query processing for a news article platform.
-
-## Architecture
-
-**Federated Database with Coordinator Pattern**
-```
-┌──────────────────────────────────────────┐
-│        Coordinator (Python)              │
-│  • Query parsing & routing               │
-│  • Query splitting & result merging      │
-│  • Transaction coordination              │
-└──────────┬───────────────────────────────┘
-           │
-    ┌──────┴───────┐
-    ↓              ↓
-┌─────────┐    ┌─────────┐
-│ DBMS1   │    │ DBMS2   │
-│(Beijing)│    │(HongKong)│
-│PostgreSQL    │PostgreSQL│
-│ :5432   │    │ :5433   │
-└────┬────┘    └────┬────┘
-     │              │
-     └──────┬───────┘
-            ↓
-     ┌─────────────┐
-     │ Redis Cache │
-     │   :6379     │
-     └─────────────┘
-            ↓
-     ┌─────────────┐
-     │    MinIO    │
-     │ :9000/9001  │
-     └─────────────┘
-```
-
-**Data Distribution:**
-- **User**: Beijing → DBMS1, HongKong → DBMS2
-- **Article**: science → DBMS1 & DBMS2, technology → DBMS2
-- **Read**: Co-located with User table
-- **Be-Read**: Replicated across DBMS1 and DBMS2
-- **Popular-Rank**: daily → DBMS1, weekly/monthly → DBMS2
-
-## Prerequisites
-
-- Python 3.14
-- [uv](https://github.com/astral-sh/uv)
-- Docker & Docker Compose
+A distributed database system implementing horizontal fragmentation, replication, and distributed query processing for a news article platform.
 
 ## Quick Start
 
-### 1. Clone and Install
+### 1. Setup
 ```bash
-git clone <repo-url>
-cd distributed-database-system
+# Install dependencies
 uv sync
-```
 
-### 2. Start Infrastructure
-```bash
-# Start all services (PostgreSQL × 2, Redis, MinIO)
+# Start infrastructure (PostgreSQL × 2, Redis, MinIO)
 docker compose up -d
-
-# Check services are running
-docker compose ps
-
-# View logs
-docker compose logs -f
 ```
 
-### 3. Initialize Databases
+### 2. Initialize Database
 ```bash
-# Wait for databases to be ready, then create schemas
-uv run python -m src.init_db
+# Create schemas on both DBMS
+uv run python src/cli/init_db.py
 ```
 
-### 4. Load Data
+### 3. Load Data
 ```bash
-# Bulk load with automatic partitioning and replication
-uv run python -m src.loader.bulk_load --data-dir ./data
+# Generate test data
+uv run python db-generation/generate_test_data.py
 
-# Populate Be-Read table from Read table
-uv run python -m src.loader.populate_beread
+# Load data into DBMS
+uv run python src/cli/load_data.py bulk-load
+
+# Populate Be-Read table
+uv run python src/cli/populate_beread.py
 ```
 
-### 5. Run Queries
+### 4. Query Data
 ```bash
 # Interactive query shell
-uv run python -m src.query.shell
+uv run python src/cli/query.py execute --interactive
 
-# Or execute specific query
-uv run python -m src.query.execute --query "SELECT * FROM User WHERE region='Beijing'"
+# Single query
+uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
+
+# View example queries
+uv run python src/cli/query.py examples
 ```
 
-### 6. Monitor
+## Query Examples
+
 ```bash
-# Start monitoring dashboard
-uv run python -m src.monitor.dashboard
+# Query users in Beijing (single DBMS)
+uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
 
-# Access at http://localhost:8080
+# Query all users (distributed, merges results from both DBMS)
+uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" LIMIT 10"
+
+# Query science articles (replicated, queries one DBMS)
+uv run python src/cli/query.py execute --sql "SELECT * FROM \"article\" WHERE category='science' LIMIT 5"
+
+# Query Be-Read stats
+uv run python src/cli/query.py execute --sql "SELECT aid, readNum, agreeNum FROM \"be_read\" ORDER BY readNum DESC LIMIT 5"
+
+# Disable cache for a query
+uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" LIMIT 5" --no-cache
 ```
+
+## Interactive Shell
+
+```bash
+uv run python src/cli/query.py execute -i
+
+SQL> SELECT * FROM "user" WHERE region='Beijing' LIMIT 3
+✓ Routing: single on DBMS1
+✓ Retrieved 3 rows
+
+Returned 3 rows:
+1. {'uid': 'u0', 'name': 'Alice', 'region': 'Beijing', ...}
+2. {'uid': 'u2', 'name': 'Charlie', 'region': 'Beijing', ...}
+3. {'uid': 'u4', 'name': 'Eve', 'region': 'Beijing', ...}
+
+SQL> clear cache
+✓ Cache cleared
+
+SQL> exit
+```
+
+## Architecture
+
+**Data Distribution:**
+- **User**: Beijing → DBMS1, Hong Kong → DBMS2
+- **Article**: science → both DBMS, technology → DBMS2
+- **Read**: Co-located with User table
+- **Be-Read**: Replicated on both DBMS
+- **Popular-Rank**: daily → DBMS1, weekly/monthly → DBMS2
+
+**Query Coordinator:**
+- Routes queries based on fragmentation rules
+- Executes on single or multiple DBMS
+- Caches results in Redis (60 second TTL)
+- Merges results from distributed queries
 
 ## Docker Management
+
 ```bash
 # Start services
 docker compose up -d
@@ -109,147 +106,76 @@ docker compose up -d
 # Stop services
 docker compose down
 
-# Stop and remove volumes (clean slate)
+# Clean slate (removes data)
 docker compose down -v
 
-# View service logs
-docker compose logs -f [service_name]
+# View logs
+docker compose logs -f
 
-# Restart a specific service
-docker compose restart dbms1
+# Access PostgreSQL
+docker compose exec dbms1 psql -U ddbs -d ddbs1
+docker compose exec dbms2 psql -U ddbs -d ddbs2
 
-# Access PostgreSQL shell
-docker compose exec dbms1 psql -U postgres -d dbms1
-docker compose exec dbms2 psql -U postgres -d dbms2
-
-# Access Redis CLI
+# Access Redis
 docker compose exec redis redis-cli
 
-# Access MinIO console
+# MinIO Console
 # http://localhost:9001 (minioadmin/minioadmin)
 ```
 
 ## Development
-```bash
-# Lint
-uv run ruff check .
 
-# Format
+```bash
+# Format code
 uv run ruff format .
 
-# Run tests
-uv run pytest
+# Lint code
+uv run ruff check .
 
-# Type check
-uv run mypy src/
+# Fix linting issues
+uv run ruff check --fix .
 ```
 
 ## Project Structure
+
 ```
 .
-├── docker-compose.yml       # Infrastructure definition
-├── config.json             # DBMS connection config
+├── docker-compose.yml          # Infrastructure (Postgres, Redis, MinIO)
+├── sql/schema.sql              # Database schema
+├── db-generation/              # Test data generation
 ├── src/
-│   ├── coordinator.py       # Query routing & coordination
-│   ├── dbms/
-│   │   ├── connection.py    # DBMS connection managers
-│   │   └── manager.py       # DBMS node management
-│   ├── loader/
-│   │   ├── bulk_load.py     # Bulk data loading
-│   │   └── partitioner.py   # Data partitioning logic
-│   ├── query/
-│   │   ├── parser.py        # Query parsing
-│   │   ├── router.py        # Query routing
-│   │   ├── executor.py      # Distributed query execution
-│   │   └── aggregator.py    # Result merging
-│   ├── cache/
-│   │   └── redis_cache.py   # Redis cache layer
-│   ├── monitor/
-│   │   └── dashboard.py     # DBMS monitoring
-│   └── init_db.py           # Database initialization
-├── tests/
-├── data/                    # Sample data files
-├── pyproject.toml
-└── README.md
+│   ├── cli/
+│   │   ├── init_db.py          # Initialize databases
+│   │   ├── load_data.py        # Load data with partitioning
+│   │   ├── populate_beread.py  # Populate Be-Read table
+│   │   └── query.py            # Query CLI
+│   └── domains/
+│       └── query/
+│           ├── router.py       # Query routing logic
+│           ├── executor.py     # Query execution
+│           └── coordinator.py  # Main coordinator
+└── docs/                       # Documentation
 ```
-
-## Core Operations
-
-### 1. Bulk Load
-```bash
-uv run python -m src.loader.bulk_load --data-dir ./data
-```
-
-### 2. Populate Be-Read
-```bash
-uv run python -m src.loader.populate_beread
-```
-
-### 3. Distributed Queries
-```python
-# Single DBMS query
-"SELECT * FROM User WHERE region='Beijing'"  # → DBMS1 only
-
-# Multi-DBMS query with merge
-"SELECT * FROM Article WHERE category='science'"  # → DBMS1 + DBMS2
-
-# Distributed join
-"SELECT u.name, a.title FROM User u 
- JOIN Read r ON u.uid = r.uid 
- JOIN Article a ON r.aid = a.aid"
-```
-
-### 4. Top-5 Popular Articles
-```python
-"SELECT * FROM PopularArticles WHERE granularity='daily' LIMIT 5"
-```
-
-## Query Splitting Example
-
-**Query:** "Get all science articles read by Beijing users"
-```python
-# Coordinator splits into:
-1. Query DBMS1: SELECT uid FROM User WHERE region='Beijing'
-2. Query DBMS1+DBMS2: SELECT * FROM Article WHERE category='science'
-3. Query DBMS1: SELECT * FROM Read WHERE uid IN (...)
-4. Merge results locally in coordinator
-5. Cache result in Redis (5 min TTL)
-```
-
-## Cache Strategy
-
-- **Popular articles**: 10 min TTL
-- **User profiles**: 5 min TTL
-- **Query results**: 1 min TTL
-- **Be-Read aggregations**: 30 sec TTL
 
 ## Troubleshooting
+
 ```bash
-# Check if services are healthy
+# Check service status
 docker compose ps
 
-# View detailed logs
+# View logs for a specific service
 docker compose logs dbms1
-docker compose logs dbms2
-docker compose logs redis
+
+# Restart a service
+docker compose restart redis
 
 # Reset everything
 docker compose down -v
 docker compose up -d
-uv run python -m src.init_db
+uv run python src/cli/init_db.py
 ```
-
-## Run containers
-1) `docker compose up -d`
-2) `docker compose exec -T dbms1 sh -lc 'psql -U ddbs -d ddbs1 -v ON_ERROR_STOP=1 -f -' < sql/schema.sql`
-   `docker compose exec -T dbms2 sh -lc 'psql -U ddbs -d ddbs2 -v ON_ERROR_STOP=1 -f -' < sql/schema.sql`
-3) `uv run -- uvicorn services.api.app.main:app --reload` → GET /health
 
 ## Contributors
 
-- [Your Name] - Project Lead
-- [Teammate Name] - Team Member
-
-## License
-
-MIT License
+- Henrik Kvamme
+- Rui Silveira

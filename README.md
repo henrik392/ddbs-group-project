@@ -43,8 +43,24 @@ uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE regio
 uv run python src/cli/query.py examples
 ```
 
+### 5. Popular Articles
+```bash
+# Populate Popular-Rank table
+uv run python src/cli/populate_popularrank.py
+
+# Query top-5 daily popular articles
+uv run python src/cli/query.py top5 --granularity daily
+
+# Query top-5 weekly popular articles
+uv run python src/cli/query.py top5 -g weekly
+
+# Query top-5 monthly popular articles
+uv run python src/cli/query.py top5 -g monthly
+```
+
 ## Query Examples
 
+### Basic Queries
 ```bash
 # Query users in Beijing (single DBMS)
 uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
@@ -60,6 +76,36 @@ uv run python src/cli/query.py execute --sql "SELECT aid, readNum, agreeNum FROM
 
 # Disable cache for a query
 uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" LIMIT 5" --no-cache
+```
+
+### Top-5 Popular Articles with Details
+```bash
+# Daily top-5 articles (from DBMS1)
+uv run python src/cli/query.py top5 --granularity daily
+
+# Weekly top-5 articles (from DBMS2)
+uv run python src/cli/query.py top5 -g weekly
+
+# Monthly top-5 articles (from DBMS2)
+uv run python src/cli/query.py top5 -g monthly
+```
+
+**Example Output:**
+```
+Top-5 daily popular articles:
+
+1. Article 6: title6
+   Category: technology
+   Abstract: abstract of article 6...
+   Text: Available
+   Image: articles/article6/image_a6_0.jpg
+
+2. Article 47: title47
+   Category: science
+   Abstract: abstract of article 47...
+   Text: Available
+   Image: articles/article47/image_a47_0.jpg
+...
 ```
 
 ## Interactive Shell
@@ -145,16 +191,17 @@ uv run ruff check --fix .
 ├── db-generation/              # Test data generation
 ├── src/
 │   ├── cli/
-│   │   ├── init_db.py          # Initialize databases
-│   │   ├── load_data.py        # Load data with partitioning
-│   │   ├── populate_beread.py  # Populate Be-Read table
-│   │   └── query.py            # Query CLI
+│   │   ├── init_db.py              # Initialize databases
+│   │   ├── load_data.py            # Load data with partitioning
+│   │   ├── populate_beread.py      # Populate Be-Read table
+│   │   ├── populate_popularrank.py # Populate Popular-Rank table
+│   │   └── query.py                # Query CLI (execute, top5, examples)
 │   └── domains/
 │       └── query/
-│           ├── router.py       # Query routing logic
-│           ├── executor.py     # Query execution
-│           └── coordinator.py  # Main coordinator
-└── docs/                       # Documentation
+│           ├── router.py           # Query routing logic
+│           ├── executor.py         # Query execution & joins
+│           └── coordinator.py      # Main coordinator with cache
+└── docs/                           # Documentation & plan
 ```
 
 ## Troubleshooting

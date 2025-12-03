@@ -8,8 +8,9 @@
 3. **Be-Read Population** - Aggregation from Read table
 4. **Query Coordinator** - Distributed query routing and execution with Redis caching
 5. **Popular-Rank** - Top-5 queries with distributed joins
+6. **Monitoring System** - DBMS status, data distribution, workload monitoring
 
-### 🔄 Remaining Work
+### 🔄 Current Work: Advanced Features (Optional - Bonus Points)
 
 ## Phase 5: Monitoring System (Required)
 
@@ -43,13 +44,77 @@
 - ✅ Simple but complete implementation
 - ✅ Demonstrates understanding of distributed system monitoring
 
-### Optional Enhancements (NOT needed for full marks):
-- Web dashboard with real-time updates
-- Grafana/Prometheus integration
-- Hot/cold standby DBMS
-- DBMS expansion/removal
+## Phase 6: Hot/Cold Standby (Optional - Fault Tolerance)
 
-## Phase 6: Documentation & Report
+**Goal:** Add fault tolerance with standby DBMS for high availability
+
+**Implementation:**
+
+1. **Add DBMS1 Standby Container**
+   - Configure PostgreSQL streaming replication
+   - Standby continuously syncs from DBMS1 primary
+   - Read-only standby, promotes to primary on failure
+
+2. **Health Check & Failover** (`src/cli/failover.py`)
+   - Periodic health checks on primary DBMS
+   - Automatic failover detection
+   - Promote standby to primary when needed
+
+3. **Update Query Executor** (`src/domains/query/executor.py`)
+   - Try standby on connection failure
+   - Seamless fallback to standby
+   - Connection retry logic
+
+**Demo Value:**
+- Kill DBMS1 → queries still work via standby
+- Shows fault tolerance and high availability
+- PostgreSQL built-in replication (proven technology)
+
+**Files to modify:**
+- `docker-compose.yml` - Add dbms1-standby service
+- `src/domains/query/executor.py` - Standby fallback logic
+- `src/cli/failover.py` - Health check and promotion
+- `src/cli/monitor.py` - Show standby status
+
+## Phase 7: DBMS Expansion (Optional - Scalability)
+
+**Goal:** Dynamic horizontal scaling by adding DBMS3
+
+**Implementation:**
+
+1. **Add DBMS3 for Shanghai Region**
+   - New PostgreSQL instance (port 5432)
+   - Update fragmentation: Beijing→DBMS1, Hong Kong→DBMS2, Shanghai→DBMS3
+   - Three-way data distribution
+
+2. **Data Rebalancing** (`src/cli/expand.py`)
+   - Migrate some existing users to DBMS3
+   - Maintain data consistency during migration
+   - Update Popular-Rank distribution
+
+3. **Update Query Router** (`src/domains/query/router.py`)
+   - Add DBMS3 routing rules
+   - Support 3-way parallel queries
+   - Handle new region conditions
+
+4. **Update Monitoring** (`src/cli/monitor.py`)
+   - Show 3 DBMS in status reports
+   - Display 3-way data distribution
+   - Track workload across all nodes
+
+**Demo Value:**
+- Show data distributed across 3 DBMS
+- Query merges results from 3 sources
+- Demonstrates horizontal scalability
+
+**Files to modify:**
+- `docker-compose.yml` - Add dbms3 service
+- `src/domains/query/router.py` - Add DBMS3 routing
+- `src/domains/query/executor.py` - Support 3 DBMS
+- `src/cli/expand.py` - Migration and rebalancing
+- `src/cli/monitor.py` - 3 DBMS monitoring
+
+## Phase 8: Documentation & Report
 
 **Required components:**
 1. **Technical Report** (research paper format)

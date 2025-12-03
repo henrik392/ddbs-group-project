@@ -39,11 +39,11 @@ class QueryRouter:
         elif table == "popular_rank":
             return self._route_popularrank(sql, sql_lower)
         else:
-            # Default: query both and merge
+            # Default: query all 3 and merge
             return {
-                "targets": ["DBMS1", "DBMS2"],
+                "targets": ["DBMS1", "DBMS2", "DBMS3"],
                 "strategy": "parallel",
-                "queries": {"DBMS1": sql, "DBMS2": sql},
+                "queries": {"DBMS1": sql, "DBMS2": sql, "DBMS3": sql},
             }
 
     def _route_user(self, sql: str, sql_lower: str) -> dict[str, Any]:
@@ -60,12 +60,18 @@ class QueryRouter:
                 "strategy": "single",
                 "queries": {"DBMS2": sql},
             }
-        else:
-            # No filter or other filter: query both and merge
+        elif "region" in sql_lower and "shanghai" in sql_lower:
             return {
-                "targets": ["DBMS1", "DBMS2"],
+                "targets": ["DBMS3"],
+                "strategy": "single",
+                "queries": {"DBMS3": sql},
+            }
+        else:
+            # No filter or other filter: query all 3 and merge
+            return {
+                "targets": ["DBMS1", "DBMS2", "DBMS3"],
                 "strategy": "parallel",
-                "queries": {"DBMS1": sql, "DBMS2": sql},
+                "queries": {"DBMS1": sql, "DBMS2": sql, "DBMS3": sql},
             }
 
     def _route_article(self, sql: str, sql_lower: str) -> dict[str, Any]:
@@ -84,7 +90,7 @@ class QueryRouter:
                 "queries": {"DBMS1": sql},
             }
         else:
-            # No filter: query both and merge
+            # No filter: query DBMS1 and DBMS2 (DBMS3 has no articles)
             return {
                 "targets": ["DBMS1", "DBMS2"],
                 "strategy": "parallel",
@@ -92,11 +98,11 @@ class QueryRouter:
             }
 
     def _route_read(self, sql: str) -> dict[str, Any]:
-        """Read table: co-located with User, query both and merge."""
+        """Read table: co-located with User, query all 3 and merge."""
         return {
-            "targets": ["DBMS1", "DBMS2"],
+            "targets": ["DBMS1", "DBMS2", "DBMS3"],
             "strategy": "parallel",
-            "queries": {"DBMS1": sql, "DBMS2": sql},
+            "queries": {"DBMS1": sql, "DBMS2": sql, "DBMS3": sql},
         }
 
     def _route_beread(self, sql: str, sql_lower: str) -> dict[str, Any]:

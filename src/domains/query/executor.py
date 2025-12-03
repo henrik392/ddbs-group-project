@@ -12,6 +12,7 @@ class QueryExecutor:
             "DBMS1": "postgresql://ddbs:ddbs@localhost:5434/ddbs1",
             "DBMS1-STANDBY": "postgresql://ddbs:ddbs@localhost:5435/ddbs1",
             "DBMS2": "postgresql://ddbs:ddbs@localhost:5433/ddbs2",
+            "DBMS3": "postgresql://ddbs:ddbs@localhost:5436/ddbs3",
         }
         self.standby_map = {"DBMS1": "DBMS1-STANDBY"}  # Primary -> Standby mapping
 

@@ -47,6 +47,13 @@ def status():
             "password": "ddbs",
             "dbname": "ddbs2",
         },
+        "DBMS3": {
+            "host": "localhost",
+            "port": 5436,
+            "user": "ddbs",
+            "password": "ddbs",
+            "dbname": "ddbs3",
+        },
     }
 
     for name, config in dbms_configs.items():
@@ -114,18 +121,21 @@ def distribution():
     print("User Table:")
     print("  • region='Beijing' → DBMS1")
     print("  • region='Hong Kong' → DBMS2")
+    print("  • region='Shanghai' → DBMS3")
     print()
     print("Article Table:")
     print("  • category='science' → DBMS1 & DBMS2 (replicated)")
     print("  • category='technology' → DBMS2")
+    print("  • DBMS3 has no articles (users only)")
     print()
     print("Read Table:")
     print("  • Co-located with User table (no replication)")
     print("  • Beijing users' reads → DBMS1")
     print("  • Hong Kong users' reads → DBMS2")
+    print("  • Shanghai users' reads → DBMS3")
     print()
     print("Be-Read Table:")
-    print("  • Replicated on both DBMS1 & DBMS2")
+    print("  • Replicated on DBMS1, DBMS2, & DBMS3")
     print()
     print("Popular-Rank Table:")
     print("  • temporalGranularity='daily' → DBMS1")
@@ -143,6 +153,7 @@ def distribution():
         "DBMS1": "postgresql://ddbs:ddbs@localhost:5434/ddbs1",
         "DBMS1-STANDBY": "postgresql://ddbs:ddbs@localhost:5435/ddbs1",
         "DBMS2": "postgresql://ddbs:ddbs@localhost:5433/ddbs2",
+        "DBMS3": "postgresql://ddbs:ddbs@localhost:5436/ddbs3",
     }
 
     tables = ["user", "article", "user_read", "be_read", "popular_rank"]
@@ -269,6 +280,7 @@ def summary():
         "DBMS1": "postgresql://ddbs:ddbs@localhost:5434/ddbs1",
         "DBMS1-STANDBY": "postgresql://ddbs:ddbs@localhost:5435/ddbs1",
         "DBMS2": "postgresql://ddbs:ddbs@localhost:5433/ddbs2",
+        "DBMS3": "postgresql://ddbs:ddbs@localhost:5436/ddbs3",
     }
 
     dbms_status = {}

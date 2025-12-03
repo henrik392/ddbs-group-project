@@ -33,6 +33,13 @@ def status():
             "password": "ddbs",
             "dbname": "ddbs1",
         },
+        "DBMS1-STANDBY": {
+            "host": "localhost",
+            "port": 5435,
+            "user": "ddbs",
+            "password": "ddbs",
+            "dbname": "ddbs1",
+        },
         "DBMS2": {
             "host": "localhost",
             "port": 5433,
@@ -134,6 +141,7 @@ def distribution():
 
     dbms_configs = {
         "DBMS1": "postgresql://ddbs:ddbs@localhost:5434/ddbs1",
+        "DBMS1-STANDBY": "postgresql://ddbs:ddbs@localhost:5435/ddbs1",
         "DBMS2": "postgresql://ddbs:ddbs@localhost:5433/ddbs2",
     }
 
@@ -259,6 +267,7 @@ def summary():
 
     dbms_configs = {
         "DBMS1": "postgresql://ddbs:ddbs@localhost:5434/ddbs1",
+        "DBMS1-STANDBY": "postgresql://ddbs:ddbs@localhost:5435/ddbs1",
         "DBMS2": "postgresql://ddbs:ddbs@localhost:5433/ddbs2",
     }
 

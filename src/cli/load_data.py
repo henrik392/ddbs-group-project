@@ -25,6 +25,7 @@ def bulk_load(sql_dir: Path):
 
     # Define connections
     dbms1_conn = "postgresql://ddbs:ddbs@localhost:5434/ddbs1"
+    dbms1_standby_conn = "postgresql://ddbs:ddbs@localhost:5435/ddbs1"
     dbms2_conn = "postgresql://ddbs:ddbs@localhost:5433/ddbs2"
 
     # Files to load into each DBMS
@@ -34,6 +35,45 @@ def bulk_load(sql_dir: Path):
     # Load into DBMS1
     print("Loading data into DBMS1 (Beijing)...")
     with psycopg.connect(dbms1_conn) as conn:
+        for filename in dbms1_files:
+            file_path = sql_dir / filename
+            if not file_path.exists():
+                print(f"  ⚠ Skipping {filename} (not found)")
+                continue
+
+            print(f"  Loading {filename}...")
+            sql = file_path.read_text()
+
+            if not sql.strip() or "INSERT INTO" not in sql:
+                print("    → Empty or invalid, skipped")
+                continue
+
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(sql)
+                conn.commit()
+
+                # Count rows
+                table_name = filename.split("_")[0]
+                if table_name == "user":
+                    table_name = '"user"'
+                elif table_name == "article":
+                    table_name = '"article"'
+                elif table_name == "read":
+                    table_name = '"user_read"'
+
+                with conn.cursor() as cur:
+                    cur.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    count = cur.fetchone()[0]
+                print(f"    ✓ Loaded {count} rows")
+            except Exception as e:
+                print(f"    ✗ Error: {e}")
+                conn.rollback()
+                raise
+
+    # Load into DBMS1-STANDBY (replica)
+    print("\nLoading data into DBMS1-STANDBY (Hot Standby)...")
+    with psycopg.connect(dbms1_standby_conn) as conn:
         for filename in dbms1_files:
             file_path = sql_dir / filename
             if not file_path.exists():
@@ -112,6 +152,7 @@ def bulk_load(sql_dir: Path):
     print("\n✓ Data loading complete!")
     print("\nData distribution:")
     print("  DBMS1 (Beijing): Beijing users + science articles + Beijing reads")
+    print("  DBMS1-STANDBY (Hot Standby): Same as DBMS1 (for fault tolerance)")
     print("  DBMS2 (Hong Kong): Hong Kong users + all articles + Hong Kong reads")
 
 

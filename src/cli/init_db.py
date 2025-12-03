@@ -27,6 +27,18 @@ def init_databases():
         print(f"✗ DBMS1 initialization failed: {e}")
         raise
 
+    # Initialize DBMS1-STANDBY
+    print("Initializing DBMS1-STANDBY (Hot Standby)...")
+    try:
+        with psycopg.connect("postgresql://ddbs:ddbs@localhost:5435/ddbs1") as conn:
+            with conn.cursor() as cur:
+                cur.execute(schema_sql)
+            conn.commit()
+        print("✓ DBMS1-STANDBY initialized successfully")
+    except Exception as e:
+        print(f"✗ DBMS1-STANDBY initialization failed: {e}")
+        raise
+
     # Initialize DBMS2
     print("Initializing DBMS2 (Hong Kong)...")
     try:
@@ -41,6 +53,7 @@ def init_databases():
 
     print("\n✓ Database initialization complete!")
     print("  DBMS1: postgresql://ddbs:ddbs@localhost:5434/ddbs1")
+    print("  DBMS1-STANDBY: postgresql://ddbs:ddbs@localhost:5435/ddbs1")
     print("  DBMS2: postgresql://ddbs:ddbs@localhost:5433/ddbs2")
 
 

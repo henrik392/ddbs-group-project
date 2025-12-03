@@ -10,8 +10,10 @@ class QueryExecutor:
     def __init__(self):
         self.connections = {
             "DBMS1": "postgresql://ddbs:ddbs@localhost:5434/ddbs1",
+            "DBMS1-STANDBY": "postgresql://ddbs:ddbs@localhost:5435/ddbs1",
             "DBMS2": "postgresql://ddbs:ddbs@localhost:5433/ddbs2",
         }
+        self.standby_map = {"DBMS1": "DBMS1-STANDBY"}  # Primary -> Standby mapping
 
     def execute(self, routing_plan: dict[str, Any]) -> list[dict[str, Any]]:
         """Execute query based on routing plan and return results."""
@@ -72,18 +74,46 @@ class QueryExecutor:
         return merged
 
     def _execute_on_dbms(self, dbms: str, sql: str) -> list[dict[str, Any]]:
-        """Execute SQL on specific DBMS."""
-        with psycopg.connect(self.connections[dbms]) as conn:
-            with conn.cursor() as cur:
-                cur.execute(sql)
+        """Execute SQL on specific DBMS with standby fallback."""
+        try:
+            # Try primary DBMS
+            with psycopg.connect(self.connections[dbms]) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(sql)
 
-                # Get column names
-                columns = (
-                    [desc[0] for desc in cur.description] if cur.description else []
-                )
+                    # Get column names
+                    columns = (
+                        [desc[0] for desc in cur.description] if cur.description else []
+                    )
 
-                # Fetch all rows
-                rows = cur.fetchall()
+                    # Fetch all rows
+                    rows = cur.fetchall()
 
-                # Return as list of dicts
-                return [dict(zip(columns, row)) for row in rows]
+                    # Return as list of dicts
+                    return [dict(zip(columns, row)) for row in rows]
+
+        except Exception as e:
+            # Try standby if primary fails
+            if dbms in self.standby_map:
+                standby_dbms = self.standby_map[dbms]
+                print(f"⚠ {dbms} failed, trying standby {standby_dbms}")
+
+                with psycopg.connect(self.connections[standby_dbms]) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(sql)
+
+                        # Get column names
+                        columns = (
+                            [desc[0] for desc in cur.description]
+                            if cur.description
+                            else []
+                        )
+
+                        # Fetch all rows
+                        rows = cur.fetchall()
+
+                        # Return as list of dicts
+                        return [dict(zip(columns, row)) for row in rows]
+            else:
+                # No standby available, re-raise exception
+                raise e

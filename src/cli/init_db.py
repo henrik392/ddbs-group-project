@@ -51,10 +51,23 @@ def init_databases():
         print(f"✗ DBMS2 initialization failed: {e}")
         raise
 
+    # Initialize DBMS3
+    print("Initializing DBMS3 (Shanghai)...")
+    try:
+        with psycopg.connect("postgresql://ddbs:ddbs@localhost:5436/ddbs3") as conn:
+            with conn.cursor() as cur:
+                cur.execute(schema_sql)
+            conn.commit()
+        print("✓ DBMS3 initialized successfully")
+    except Exception as e:
+        print(f"✗ DBMS3 initialization failed: {e}")
+        raise
+
     print("\n✓ Database initialization complete!")
     print("  DBMS1: postgresql://ddbs:ddbs@localhost:5434/ddbs1")
     print("  DBMS1-STANDBY: postgresql://ddbs:ddbs@localhost:5435/ddbs1")
     print("  DBMS2: postgresql://ddbs:ddbs@localhost:5433/ddbs2")
+    print("  DBMS3: postgresql://ddbs:ddbs@localhost:5436/ddbs3")
 
 
 if __name__ == "__main__":

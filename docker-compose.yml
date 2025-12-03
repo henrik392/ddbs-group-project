@@ -14,6 +14,11 @@ services:
     environment: [POSTGRES_USER=ddbs, POSTGRES_PASSWORD=ddbs, POSTGRES_DB=ddbs2]
     ports: ["5433:5432"]
     volumes: [dbms2:/var/lib/postgresql/data]
+  dbms3:
+    image: postgres:16
+    environment: [POSTGRES_USER=ddbs, POSTGRES_PASSWORD=ddbs, POSTGRES_DB=ddbs3]
+    ports: ["5436:5432"]
+    volumes: [dbms3:/var/lib/postgresql/data]
   redis:
     image: redis:7
     ports: ["6379:6379"]
@@ -23,4 +28,4 @@ services:
     environment: [MINIO_ROOT_USER=admin, MINIO_ROOT_PASSWORD=adminadmin]
     ports: ["9000:9000","9001:9001"]
     volumes: [minio:/data]
-volumes: { dbms1: {}, dbms1_standby: {}, dbms2: {}, minio: {} }
+volumes: { dbms1: {}, dbms1_standby: {}, dbms2: {}, dbms3: {}, minio: {} }

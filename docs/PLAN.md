@@ -138,26 +138,39 @@
 
 ## Implementation Priority
 
-1. **NEXT: Monitoring System** (1-2 hours)
-   - Simple CLI tool showing DBMS status and data distribution
-   - Query workload statistics from Redis
+1. **Phase 6: Hot/Cold Standby** (2-3 days)
+   - Add standby container with streaming replication
+   - Health check and failover logic
+   - Update executor for standby fallback
+   - Testing failover scenarios
 
-2. **Documentation** (after monitoring is done)
-   - Update README with monitoring commands
-   - Write technical report
-   - Write system manual
+2. **Phase 7: DBMS Expansion** (3-4 days)
+   - Add DBMS3 container
+   - Update routing for 3 DBMS
+   - Data migration and rebalancing
+   - Testing 3-way queries
+
+3. **Phase 8: Documentation** (1 day)
+   - Update report with advanced features
+   - System manual updates
+   - Demo preparation
 
 ## Success Criteria
 
-For **full marks**, we need:
+**Required (full marks):**
 - [x] Bulk loading with partitioning ✅
 - [x] Efficient queries (with cache) ✅
 - [x] Be-Read population ✅
 - [x] Top-5 popular articles with joins ✅
-- [ ] Monitoring system (NEXT)
+- [x] Monitoring system ✅
 - [ ] Technical report
 - [ ] System manual
-- [ ] Demo preparation
+
+**Optional (bonus points):**
+- [ ] Hot/Cold Standby (fault tolerance)
+- [ ] DBMS Expansion (scalability)
+
+**Target:** All required + 2 optional features = Top marks
 
 ## Technology Stack (Simple & Effective)
 

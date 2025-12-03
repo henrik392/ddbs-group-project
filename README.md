@@ -224,7 +224,7 @@ The system includes a hot-cold standby configuration for DBMS1 to provide fault 
 # Manual setup
 docker compose up -d dbms1-standby
 uv run python src/cli/init_db.py
-uv run python src/cli/load_data.py bulk-load --sql-dir data/partitioned_data
+uv run python src/cli/load_data.py bulk-load --sql-dir generated_data
 ```
 
 **Test Failover:**

@@ -29,7 +29,7 @@ echo ""
 
 # Step 4: Load data into standby
 echo "[4/4] Loading data into standby..."
-uv run python src/cli/load_data.py bulk-load --sql-dir data/partitioned_data
+uv run python src/cli/load_data.py bulk-load --sql-dir generated_data
 echo ""
 
 echo "==================================================================="

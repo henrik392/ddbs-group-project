@@ -210,6 +210,45 @@ Shows:
 - Recent queries with TTL
 - Redis statistics
 
+## Advanced Features
+
+### Hot-Cold Standby (Fault Tolerance)
+
+The system includes a hot-cold standby configuration for DBMS1 to provide fault tolerance.
+
+**Setup Standby:**
+```bash
+# Automated setup (recommended)
+./setup_standby.sh
+
+# Manual setup
+docker compose up -d dbms1-standby
+uv run python src/cli/init_db.py
+uv run python src/cli/load_data.py bulk-load --sql-dir generated_data
+```
+
+**Test Failover:**
+```bash
+# 1. Run a normal query
+uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
+
+# 2. Stop primary DBMS1
+docker stop ddbs-group-project-dbms1-1
+
+# 3. Query again - should automatically failover to standby
+uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
+# Output should show: ⚠ DBMS1 failed, trying standby DBMS1-STANDBY
+
+# 4. Restart primary
+docker start ddbs-group-project-dbms1-1
+```
+
+**How It Works:**
+- DBMS1-STANDBY runs on port 5435 as a replica of DBMS1
+- Query executor automatically falls back to standby if primary fails
+- Standby contains identical schema and data as DBMS1
+- Provides high availability for Beijing region data
+
 ## Architecture
 
 **Data Distribution:**

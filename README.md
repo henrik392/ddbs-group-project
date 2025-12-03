@@ -58,6 +58,21 @@ uv run python src/cli/query.py top5 -g weekly
 uv run python src/cli/query.py top5 -g monthly
 ```
 
+### 6. Monitor System
+```bash
+# Quick system summary
+uv run python src/cli/monitor.py summary
+
+# Detailed DBMS status
+uv run python src/cli/monitor.py status
+
+# Data distribution report
+uv run python src/cli/monitor.py distribution
+
+# Query workload statistics
+uv run python src/cli/monitor.py workload
+```
+
 ## Query Examples
 
 ### Basic Queries
@@ -128,6 +143,73 @@ SQL> clear cache
 SQL> exit
 ```
 
+## Monitoring
+
+### System Summary
+```bash
+uv run python src/cli/monitor.py summary
+```
+
+**Output:**
+```
+============================================================
+DISTRIBUTED DBMS MONITORING SUMMARY
+============================================================
+
+[1] DBMS STATUS
+------------------------------------------------------------
+  DBMS1: ✓ ONLINE
+  DBMS2: ✓ ONLINE
+
+[2] DATA SUMMARY
+------------------------------------------------------------
+  user                 100 total rows
+  article               75 total rows
+  user_read            500 total rows
+  be_read               75 total rows
+
+[3] CACHE STATUS
+------------------------------------------------------------
+  Redis: ✓ ONLINE
+  Cached Queries: 0
+  Hit Rate: 16.67%
+============================================================
+```
+
+### DBMS Status
+```bash
+uv run python src/cli/monitor.py status
+```
+
+Shows:
+- Connection status (ONLINE/OFFLINE)
+- PostgreSQL version
+- Database size
+- Active connections
+- Redis cache status and memory usage
+
+### Data Distribution
+```bash
+uv run python src/cli/monitor.py distribution
+```
+
+Shows:
+- Fragmentation rules for all tables
+- Actual row counts per DBMS
+- Table sizes
+- Data replication status
+
+### Workload Statistics
+```bash
+uv run python src/cli/monitor.py workload
+```
+
+Shows:
+- Number of cached queries
+- Cache hit rate
+- Recent queries with TTL
+- Redis statistics
+
 ## Architecture
 
 **Data Distribution:**
@@ -195,7 +277,8 @@ uv run ruff check --fix .
 │   │   ├── load_data.py            # Load data with partitioning
 │   │   ├── populate_beread.py      # Populate Be-Read table
 │   │   ├── populate_popularrank.py # Populate Popular-Rank table
-│   │   └── query.py                # Query CLI (execute, top5, examples)
+│   │   ├── query.py                # Query CLI (execute, top5, examples)
+│   │   └── monitor.py              # Monitoring CLI (status, distribution, workload)
 │   └── domains/
 │       └── query/
 │           ├── router.py           # Query routing logic

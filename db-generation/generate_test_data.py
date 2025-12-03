@@ -25,7 +25,13 @@ def gen_user_values(i):
     dept = f"dept{int(random.random() * 20)}"
     grade = f"grade{int(random.random() * 4 + 1)}"
     language = "en" if random.random() > 0.8 else "zh"
-    region = "Beijing" if random.random() > 0.4 else "Hong Kong"
+    rand = random.random()
+    if rand < 0.33:
+        region = "Beijing"
+    elif rand < 0.66:
+        region = "Hong Kong"
+    else:
+        region = "Shanghai"
     role = f"role{int(random.random() * 3)}"
     preferTags = f"tags{int(random.random() * 50)}"
     obtainedCredits = str(int(random.random() * 100))
@@ -99,6 +105,7 @@ def generate_partitioned_sql():
     print(f"Generating {USERS_NUM} users...")
     beijing_users = []
     hongkong_users = []
+    shanghai_users = []
 
     for i in range(USERS_NUM):
         values = gen_user_values(i)
@@ -106,8 +113,10 @@ def generate_partitioned_sql():
 
         if region == "Beijing":
             beijing_users.append(values)
-        else:
+        elif region == "Hong Kong":
             hongkong_users.append(values)
+        else:
+            shanghai_users.append(values)
 
     # Write user SQL for DBMS1 (Beijing)
     with open("generated_data/user_dbms1.sql", "w") as f:
@@ -125,7 +134,15 @@ def generate_partitioned_sql():
             f.write(",\n".join(hongkong_users))
             f.write(";\n")
 
-    print(f"  Beijing users: {len(beijing_users)}, Hong Kong users: {len(hongkong_users)}")
+    # Write user SQL for DBMS3 (Shanghai)
+    with open("generated_data/user_dbms3.sql", "w") as f:
+        f.write("-- Users for DBMS3 (Shanghai)\n")
+        if shanghai_users:
+            f.write('INSERT INTO "user" (timestamp, id, uid, name, gender, email, phone, dept, grade, language, region, role, preferTags, obtainedCredits) VALUES\n')
+            f.write(",\n".join(shanghai_users))
+            f.write(";\n")
+
+    print(f"  Beijing users: {len(beijing_users)}, Hong Kong users: {len(hongkong_users)}, Shanghai users: {len(shanghai_users)}")
 
     # Generate articles with partitioning
     print(f"Generating {ARTICLES_NUM} articles...")
@@ -164,6 +181,7 @@ def generate_partitioned_sql():
     print(f"Generating {READS_NUM} reads...")
     beijing_reads = []
     hongkong_reads = []
+    shanghai_reads = []
 
     for i in range(READS_NUM):
         values = gen_read_values(i)
@@ -173,8 +191,10 @@ def generate_partitioned_sql():
 
         if region == "Beijing":
             beijing_reads.append(values)
-        else:
+        elif region == "Hong Kong":
             hongkong_reads.append(values)
+        else:
+            shanghai_reads.append(values)
 
     # Write read SQL for DBMS1 (Beijing users' reads)
     with open("generated_data/read_dbms1.sql", "w") as f:
@@ -192,12 +212,20 @@ def generate_partitioned_sql():
             f.write(",\n".join(hongkong_reads))
             f.write(";\n")
 
-    print(f"  Beijing reads: {len(beijing_reads)}, Hong Kong reads: {len(hongkong_reads)}")
+    # Write read SQL for DBMS3 (Shanghai users' reads)
+    with open("generated_data/read_dbms3.sql", "w") as f:
+        f.write("-- Reads for DBMS3 (Shanghai users)\n")
+        if shanghai_reads:
+            f.write('INSERT INTO "user_read" (timestamp, id, uid, aid, readTimeLength, agreeOrNot, commentOrNot, shareOrNot, commentDetail) VALUES\n')
+            f.write(",\n".join(shanghai_reads))
+            f.write(";\n")
+
+    print(f"  Beijing reads: {len(beijing_reads)}, Hong Kong reads: {len(hongkong_reads)}, Shanghai reads: {len(shanghai_reads)}")
 
     print("\n✓ SQL files generated in generated_data/ directory")
-    print("  - user_dbms1.sql, user_dbms2.sql")
+    print("  - user_dbms1.sql, user_dbms2.sql, user_dbms3.sql")
     print("  - article_dbms1.sql, article_dbms2.sql")
-    print("  - read_dbms1.sql, read_dbms2.sql")
+    print("  - read_dbms1.sql, read_dbms2.sql, read_dbms3.sql")
 
 
 if __name__ == "__main__":

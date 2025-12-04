@@ -40,7 +40,7 @@ CACHE_KEY_PREFIX = "query"
 
 # HDFS Configuration
 HDFS_CONFIG = {
-    "namenode": "namenode",
+    "namenode": "localhost",
     "port": 9000,
     "web_port": 9870,
     "base_path": "/articles",

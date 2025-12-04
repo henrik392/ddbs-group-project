@@ -2,14 +2,47 @@
 
 A distributed database system implementing horizontal fragmentation, replication, and distributed query processing for a news article platform.
 
-## Quick Start
+## Quick Start (Recommended: Use Makefile)
 
-### 1. Setup
+### Complete Setup in One Command
+```bash
+# Full setup with 10G dataset (real BBC news, images, videos)
+make setup-10g
+
+# Or choose different scale
+make setup-50g   # 50G dataset
+make setup-100g  # 100G dataset
+```
+
+This single command will:
+1. Start all infrastructure (PostgreSQL, Redis, HDFS)
+2. Initialize database schemas
+3. Generate production data with real media
+4. Load partitioned data into DBMS
+5. Upload media files to HDFS
+6. Populate aggregate tables (Be-Read, Popular-Rank)
+7. Verify data distribution
+
+### Query and Monitor
+```bash
+make query-shell  # Interactive SQL shell
+make top5-daily   # Top-5 daily popular articles
+make monitor      # System status overview
+```
+
+### See All Commands
+```bash
+make help
+```
+
+## Alternative: Manual Setup
+
+### 1. Setup Infrastructure
 ```bash
 # Install dependencies
 uv sync
 
-# Start infrastructure (PostgreSQL × 2, Redis, MinIO)
+# Start infrastructure (PostgreSQL × 2, Redis, HDFS)
 docker compose up -d
 ```
 
@@ -19,16 +52,22 @@ docker compose up -d
 uv run python src/cli/init_db.py
 ```
 
-### 3. Load Data
+### 3. Generate and Load Data
 ```bash
-# Generate test data
-uv run python db-generation/generate_test_data.py
+# Generate production data with real BBC news texts, images, and videos
+uv run python db-generation/generate_production_data.py --scale 10G
 
-# Load data into DBMS
-uv run python src/cli/load_data.py bulk-load
+# Load partitioned data into DBMS
+uv run python src/cli/load_data.py bulk-load --sql-dir generated_data
+
+# Upload media files to HDFS
+uv run python src/cli/load_data.py upload-media --mock-dir production_articles
 
 # Populate Be-Read table
 uv run python src/cli/populate_beread.py
+
+# Populate Popular-Rank table
+uv run python src/cli/populate_popularrank.py
 ```
 
 ### 4. Query Data
@@ -45,9 +84,6 @@ uv run python src/cli/query.py examples
 
 ### 5. Popular Articles
 ```bash
-# Populate Popular-Rank table
-uv run python src/cli/populate_popularrank.py
-
 # Query top-5 daily popular articles
 uv run python src/cli/query.py top5 --granularity daily
 
@@ -251,12 +287,19 @@ docker start ddbs-group-project-dbms1-1
 
 ## Architecture
 
+**Infrastructure:**
+- **DBMS1** (port 5434): PostgreSQL - Beijing region data
+- **DBMS2** (port 5433): PostgreSQL - Hong Kong region data
+- **Redis** (port 6379): Query result caching
+- **HDFS** (port 9000/9870): Distributed file storage for media
+
 **Data Distribution:**
 - **User**: Beijing → DBMS1, Hong Kong → DBMS2
-- **Article**: science → both DBMS, technology → DBMS2
+- **Article**: science → both DBMS (replicated), technology → DBMS2
 - **Read**: Co-located with User table
 - **Be-Read**: Replicated on both DBMS
 - **Popular-Rank**: daily → DBMS1, weekly/monthly → DBMS2
+- **Media Files**: Text, images, videos → HDFS with replication factor 2
 
 **Query Coordinator:**
 - Routes queries based on fragmentation rules
@@ -269,15 +312,23 @@ docker start ddbs-group-project-dbms1-1
 ```bash
 # Start services
 docker compose up -d
+# or use: make setup
 
 # Stop services
 docker compose down
+# or use: make down
 
 # Clean slate (removes data)
 docker compose down -v
+# or use: make clean
 
 # View logs
 docker compose logs -f
+# or use: make logs
+
+# Check running containers
+docker compose ps
+# or use: make ps
 
 # Access PostgreSQL
 docker compose exec dbms1 psql -U ddbs -d ddbs1
@@ -286,8 +337,8 @@ docker compose exec dbms2 psql -U ddbs -d ddbs2
 # Access Redis
 docker compose exec redis redis-cli
 
-# MinIO Console
-# http://localhost:9001 (minioadmin/minioadmin)
+# HDFS Web UI
+# http://localhost:9870 - NameNode interface for monitoring
 ```
 
 ## Development
@@ -295,21 +346,34 @@ docker compose exec redis redis-cli
 ```bash
 # Format code
 uv run ruff format .
+# or use: make format
 
 # Lint code
 uv run ruff check .
+# or use: make lint
 
 # Fix linting issues
 uv run ruff check --fix .
+# or use: make lint-fix
+
+# Install dependencies
+uv sync
+# or use: make deps
 ```
 
 ## Project Structure
 
 ```
 .
-├── docker-compose.yml          # Infrastructure (Postgres, Redis, MinIO)
-├── sql/schema.sql              # Database schema
-├── db-generation/              # Test data generation
+├── Makefile                        # Workflow automation
+├── docker-compose.yml              # Infrastructure (Postgres, Redis, HDFS)
+├── sql/schema.sql                  # Database schema
+├── db-generation/
+│   ├── generate_production_data.py # Production data with real media
+│   ├── generate_test_data.py       # Small test dataset
+│   ├── bbc_news_texts/             # Real BBC news articles (1,808 files)
+│   ├── image/                      # Real images (600 files)
+│   └── video/                      # Real videos (2 files)
 ├── src/
 │   ├── cli/
 │   │   ├── init_db.py              # Initialize databases
@@ -319,10 +383,12 @@ uv run ruff check --fix .
 │   │   ├── query.py                # Query CLI (execute, top5, examples)
 │   │   └── monitor.py              # Monitoring CLI (status, distribution, workload)
 │   └── domains/
-│       └── query/
-│           ├── router.py           # Query routing logic
-│           ├── executor.py         # Query execution & joins
-│           └── coordinator.py      # Main coordinator with cache
+│       ├── query/
+│       │   ├── router.py           # Query routing logic
+│       │   ├── executor.py         # Query execution & joins
+│       │   └── coordinator.py      # Main coordinator with cache
+│       └── storage/
+│           └── hdfs_manager.py     # HDFS file operations
 └── docs/                           # Documentation & plan
 ```
 

@@ -8,7 +8,51 @@ Distributed database system for a news article platform implementing horizontal 
 
 ## Development Commands
 
-### Environment Setup
+### Quick Start with Makefile
+
+**Complete setup from scratch (recommended):**
+```bash
+# Full setup with 10G dataset (uses real BBC news, images, videos)
+make setup-10g
+
+# Or choose a different scale
+make setup-50g   # 50G dataset
+make setup-100g  # 100G dataset
+```
+
+**Query the data:**
+```bash
+make query-shell  # Interactive query interface
+make top5-daily   # Top-5 daily popular articles
+make monitor      # System status overview
+```
+
+**Individual workflow steps:**
+```bash
+make setup              # Start infrastructure
+make init-db            # Initialize schemas
+make generate-data-10g  # Generate 10G dataset with real media
+make load-data          # Load into databases
+make upload-media       # Upload to HDFS
+make populate-all       # Create aggregates (Be-Read + Popular-Rank)
+make verify-data        # Verify distribution
+```
+
+**Development:**
+```bash
+make format    # Format code with ruff
+make lint-fix  # Fix linting issues
+make deps      # Install dependencies
+```
+
+**See all available commands:**
+```bash
+make help
+```
+
+### Manual Commands (Alternative to Makefile)
+
+#### Environment Setup
 ```bash
 # Install dependencies
 uv sync
@@ -23,7 +67,7 @@ docker compose down
 docker compose down -v && docker compose up -d
 ```
 
-### Code Quality
+#### Code Quality
 ```bash
 # Format code
 uv run ruff format .
@@ -35,16 +79,22 @@ uv run ruff check .
 uv run ruff check --fix .
 ```
 
-### Database Operations
+#### Database Operations
 ```bash
 # Initialize schemas on both DBMS
 uv run python src/cli/init_db.py
 
-# Generate test data
+# Generate production data with real media (10G/50G/100G)
+uv run python db-generation/generate_production_data.py --scale 10G
+
+# Generate test data (small dataset)
 uv run python db-generation/generate_test_data.py
 
 # Load data with partitioning
-uv run python src/cli/load_data.py bulk-load
+uv run python src/cli/load_data.py bulk-load --sql-dir generated_data
+
+# Upload media files to HDFS
+uv run python src/cli/load_data.py upload-media --mock-dir production_articles
 
 # Verify data distribution
 uv run python src/cli/load_data.py verify
@@ -56,7 +106,7 @@ uv run python src/cli/populate_beread.py
 uv run python src/cli/populate_popularrank.py
 ```
 
-### Query Operations
+#### Query Operations
 ```bash
 # Interactive query shell
 uv run python src/cli/query.py execute --interactive
@@ -71,7 +121,7 @@ uv run python src/cli/query.py top5 -g daily
 uv run python src/cli/query.py examples
 ```
 
-### Monitoring
+#### Monitoring
 ```bash
 # System overview
 uv run python src/cli/monitor.py summary

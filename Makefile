@@ -7,6 +7,9 @@
 
 .DEFAULT_GOAL := help
 
+# Ensure Python can find the src/ module
+export PYTHONPATH := .
+
 ##@ Infrastructure Management
 
 setup:  ## Start all infrastructure (PostgreSQL, Redis, HDFS)

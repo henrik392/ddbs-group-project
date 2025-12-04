@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Populate Be-Read table from Read table data."""
 
-import psycopg
 import time
 from collections import defaultdict
+
+import psycopg
+
+from src.config import DBMS_CONNECTIONS
 
 
 def populate_beread():
@@ -11,8 +14,8 @@ def populate_beread():
     print("Populating Be-Read table from Read table...\n")
 
     # Connect to both DBMS
-    dbms1_conn = "postgresql://ddbs:ddbs@localhost:5434/ddbs1"
-    dbms2_conn = "postgresql://ddbs:ddbs@localhost:5433/ddbs2"
+    dbms1_conn = DBMS_CONNECTIONS["DBMS1"]
+    dbms2_conn = DBMS_CONNECTIONS["DBMS2"]
 
     conn1 = psycopg.connect(dbms1_conn)
     conn2 = psycopg.connect(dbms2_conn)
@@ -161,8 +164,10 @@ def verify_beread():
     """Verify Be-Read table content."""
     print("Verifying Be-Read table...\n")
 
-    dbms1_conn = "postgresql://ddbs:ddbs@localhost:5434/ddbs1"
-    dbms2_conn = "postgresql://ddbs:ddbs@localhost:5433/ddbs2"
+    from src.config import DBMS_CONNECTIONS
+
+    dbms1_conn = DBMS_CONNECTIONS["DBMS1"]
+    dbms2_conn = DBMS_CONNECTIONS["DBMS2"]
 
     # Check DBMS1
     with psycopg.connect(dbms1_conn) as conn:

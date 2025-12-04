@@ -86,6 +86,15 @@ uv run python src/cli/monitor.py distribution
 uv run python src/cli/monitor.py workload
 ```
 
+### Report Compilation
+```bash
+# Compile LaTeX report to PDF
+cd docs && ./compile_report.sh
+
+# Take screenshots for report (see docs/SCREENSHOT_GUIDE.md)
+# Follow the quick session commands for all 10 required screenshots
+```
+
 ## Architecture
 
 ### Distributed Database Infrastructure

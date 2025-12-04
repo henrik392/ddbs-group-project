@@ -1,22 +1,80 @@
 # Screenshot Guide for Report
 
-## Screenshots Needed (7 total)
+## Screenshots Needed (10 total)
 
-### 1. System Deployment
+### Hot-Cold Standby & Fault Tolerance
+
+#### 1. Standby System Status
+**Command:**
+```bash
+uv run python src/cli/monitor.py status
+```
+
+**What it shows:**
+- DBMS1 (Primary) status
+- DBMS1-STANDBY (Hot standby) status
+- DBMS2 status
+- All three database instances online
+
+**Where to use:** Section 5.6 "Fault Tolerance - Hot-Cold Standby"
+
+**Caption:** "System status showing primary DBMS1 and hot standby DBMS1-STANDBY both online"
+
+---
+
+#### 2. Failover Test - Before Failure
+**Command:**
+```bash
+# First query - DBMS1 is online
+uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
+```
+
+**What it shows:** Normal query execution on primary DBMS1
+
+**Where to use:** Section 5.6 "Fault Tolerance - Failover Demonstration"
+
+**Caption:** "Query execution on primary DBMS1 under normal operation"
+
+---
+
+#### 3. Failover Test - During Failure
+**Commands:**
+```bash
+# Stop primary DBMS1
+docker stop ddbs-group-project-dbms1-1
+
+# Same query - should automatically failover
+uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
+```
+
+**What it shows:**
+- Warning message: "⚠ DBMS1 failed, trying standby DBMS1-STANDBY"
+- Same data retrieved from standby
+- Zero downtime
+
+**Where to use:** Section 5.6 "Fault Tolerance - Automatic Failover"
+
+**Caption:** "Automatic failover to DBMS1-STANDBY when primary DBMS1 fails"
+
+---
+
+### Regular Operations
+
+#### 4. System Deployment
 **Command:**
 ```bash
 docker compose ps
 ```
 
-**What it shows:** All services running (dbms1, dbms2, redis, minio)
+**What it shows:** All services running (dbms1, dbms1-standby, dbms2, redis, minio)
 
 **Where to use:** Section 5.1 "System Deployment"
 
-**Caption:** "System deployment showing all distributed components operational"
+**Caption:** "System deployment showing all distributed components operational including hot standby"
 
 ---
 
-### 2. Data Distribution
+#### 5. Data Distribution
 **Command:**
 ```bash
 uv run python src/cli/monitor.py distribution
@@ -33,7 +91,7 @@ uv run python src/cli/monitor.py distribution
 
 ---
 
-### 3. System Summary
+#### 6. System Summary
 **Command:**
 ```bash
 uv run python src/cli/monitor.py summary
@@ -50,7 +108,7 @@ uv run python src/cli/monitor.py summary
 
 ---
 
-### 4. Query Execution
+#### 7. Query Execution
 **Command:**
 ```bash
 uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" LIMIT 10"
@@ -64,7 +122,7 @@ uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"us
 
 ---
 
-### 5. Cache Performance
+#### 8. Cache Performance
 **Two screenshots - run same query twice:**
 
 **First run:**
@@ -87,7 +145,7 @@ uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE regio
 
 ---
 
-### 6. Top-5 Popular Articles (Distributed Join)
+#### 9. Top-5 Popular Articles (Distributed Join)
 **Command:**
 ```bash
 uv run python src/cli/query.py top5 --granularity daily
@@ -104,7 +162,7 @@ uv run python src/cli/query.py top5 --granularity daily
 
 ---
 
-### 7. Interactive Query Shell (Optional but good)
+#### 10. Interactive Query Shell (Optional but good)
 **Command:**
 ```bash
 uv run python src/cli/query.py execute -i
@@ -153,13 +211,16 @@ uv run python src/cli/query.py execute -i
 6. **Save as PNG** for best quality
 
 7. **Name files clearly:**
-   - `01_docker_ps.png`
-   - `02_distribution.png`
-   - `03_summary.png`
-   - `04_query_execution.png`
-   - `05_cache_hit.png`
-   - `06_top5_articles.png`
-   - `07_interactive_shell.png`
+   - `01_standby_status.png`
+   - `02_failover_before.png`
+   - `03_failover_during.png`
+   - `04_docker_ps.png`
+   - `05_distribution.png`
+   - `06_summary.png`
+   - `07_query_execution.png`
+   - `08_cache_hit.png`
+   - `09_top5_articles.png`
+   - `10_interactive_shell.png`
 
 ## Directory Structure
 
@@ -167,13 +228,16 @@ Save screenshots in:
 ```
 docs/
 ├── screenshots/
-│   ├── 01_docker_ps.png
-│   ├── 02_distribution.png
-│   ├── 03_summary.png
-│   ├── 04_query_execution.png
-│   ├── 05_cache_hit.png
-│   ├── 06_top5_articles.png
-│   └── 07_interactive_shell.png
+│   ├── 01_standby_status.png
+│   ├── 02_failover_before.png
+│   ├── 03_failover_during.png
+│   ├── 04_docker_ps.png
+│   ├── 05_distribution.png
+│   ├── 06_summary.png
+│   ├── 07_query_execution.png
+│   ├── 08_cache_hit.png
+│   ├── 09_top5_articles.png
+│   └── 10_interactive_shell.png
 ├── REPORT_TEMPLATE.md
 ├── MANUAL.md
 └── ...
@@ -197,37 +261,57 @@ Or in LaTeX:
 \end{figure}
 ```
 
-## Quick Screenshot Session (5 minutes)
+## Quick Screenshot Session (7 minutes)
 
 Run these commands in order and screenshot each:
 
 ```bash
-# 1. System deployment
-docker compose ps
+# HOT-COLD STANDBY DEMONSTRATION
 
-# 2. Data distribution
+# 1. Standby system status (all three DBMS)
+clear && uv run python src/cli/monitor.py status
+
+# 2. Failover test - before failure (normal operation)
+clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
+
+# 3. Failover test - during failure
+docker stop ddbs-group-project-dbms1-1
+uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
+
+# IMPORTANT: Restart DBMS1 before continuing
+docker start ddbs-group-project-dbms1-1
+sleep 3
+
+# REGULAR OPERATIONS
+
+# 4. System deployment
+clear && docker compose ps
+
+# 5. Data distribution
 clear && uv run python src/cli/monitor.py distribution
 
-# 3. System summary
+# 6. System summary
 clear && uv run python src/cli/monitor.py summary
 
-# 4. Query execution
+# 7. Query execution
 clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" LIMIT 10"
 
-# 5. Cache (first run)
+# 8. Cache (first run)
 clear && uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
 
-# 6. Cache (second run - same query)
+# 9. Cache (second run - same query)
 uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
 
-# 7. Top-5 articles
+# 10. Top-5 articles
 clear && uv run python src/cli/query.py top5 --granularity daily
 ```
 
 ## Done!
 
 You should now have all screenshots needed for a complete report that demonstrates:
-- ✅ System deployment
+- ✅ Hot-cold standby fault tolerance
+- ✅ Automatic failover mechanism
+- ✅ System deployment with standby
 - ✅ Data partitioning
 - ✅ Query execution
 - ✅ Cache performance

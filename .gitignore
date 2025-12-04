@@ -15,3 +15,14 @@ wheels/
 db-generation/
 .ruff_cache/
 generated_data/
+
+# LaTeX temporary files
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz
+*.fdb_latexmk
+*.fls

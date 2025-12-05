@@ -16,6 +16,7 @@ db-generation/*/
 .ruff_cache/
 generated_data/
 mock_articles/
+production_articles/
 
 # LaTeX temporary files
 *.aux

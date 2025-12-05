@@ -233,8 +233,17 @@ def verify():
     default="mock_articles",
     help="Directory containing mock article files",
 )
-def upload_media(mock_dir: Path):
-    """Upload article media files to HDFS."""
+@click.option(
+    "--workers",
+    type=int,
+    default=20,
+    help="Number of parallel upload workers",
+)
+def upload_media(mock_dir: Path, workers: int):
+    """Upload article media files to HDFS with parallel workers."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from threading import Lock
+
     from src.domains.storage.hdfs_manager import HDFSManager
 
     print("Uploading article media files to HDFS...\n")
@@ -247,27 +256,66 @@ def upload_media(mock_dir: Path):
         return
 
     print(f"✓ HDFS available at {info['base_path']}")
-    print(f"  Replication factor: {info['replication']}\n")
+    print(f"  Replication factor: {info['replication']}")
+    print(f"  Parallel workers: {workers}\n")
 
-    uploaded = 0
-    failed = 0
-
+    # Collect all files to upload
+    files_to_upload = []
     for article_dir in sorted(mock_dir.iterdir()):
         if not article_dir.is_dir():
             continue
-
-        article_name = article_dir.name
-        print(f"Uploading {article_name}...")
-
         for file_path in article_dir.iterdir():
-            hdfs_path = f"{article_name}/{file_path.name}"
+            hdfs_path = f"{article_dir.name}/{file_path.name}"
+            files_to_upload.append((str(file_path), hdfs_path))
 
-            if hdfs.upload_file(str(file_path), hdfs_path):
-                uploaded += 1
-            else:
-                failed += 1
+    total_files = len(files_to_upload)
+    print(f"Found {total_files:,} files to upload\n")
 
-    print(f"\n✓ Upload complete: {uploaded} files uploaded, {failed} failed")
+    # Upload function for worker threads
+    def upload_file(local_path, hdfs_path):
+        """Upload a single file (creates own HDFS client)."""
+        try:
+            hdfs_client = HDFSManager()
+            return hdfs_client.upload_file(local_path, hdfs_path)
+        except Exception as e:
+            print(f"⚠ Error uploading {hdfs_path}: {e}")
+            return False
+
+    # Parallel upload with progress tracking
+    uploaded = 0
+    failed = 0
+    lock = Lock()
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        # Submit all upload tasks
+        futures = {
+            executor.submit(upload_file, local_path, hdfs_path): (local_path, hdfs_path)
+            for local_path, hdfs_path in files_to_upload
+        }
+
+        # Process completed uploads
+        for i, future in enumerate(as_completed(futures), 1):
+            _, hdfs_path = futures[future]
+            try:
+                success = future.result()
+                with lock:
+                    if success:
+                        uploaded += 1
+                    else:
+                        failed += 1
+
+                    # Show progress every 100 files
+                    if i % 100 == 0 or i == total_files:
+                        print(
+                            f"Progress: {i:,}/{total_files:,} "
+                            f"({uploaded:,} uploaded, {failed:,} failed)"
+                        )
+            except Exception as e:
+                with lock:
+                    failed += 1
+                print(f"⚠ Exception uploading {hdfs_path}: {e}")
+
+    print(f"\n✓ Upload complete: {uploaded:,} files uploaded, {failed:,} failed")
 
 
 if __name__ == "__main__":

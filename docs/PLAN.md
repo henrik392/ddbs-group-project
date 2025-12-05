@@ -76,45 +76,7 @@
 - `src/cli/failover.py` - Health check and promotion
 - `src/cli/monitor.py` - Show standby status
 
-## Phase 7: DBMS Expansion (Optional - Scalability)
-
-**Goal:** Dynamic horizontal scaling by adding DBMS3
-
-**Implementation:**
-
-1. **Add DBMS3 for Shanghai Region**
-   - New PostgreSQL instance (port 5432)
-   - Update fragmentation: Beijing→DBMS1, Hong Kong→DBMS2, Shanghai→DBMS3
-   - Three-way data distribution
-
-2. **Data Rebalancing** (`src/cli/expand.py`)
-   - Migrate some existing users to DBMS3
-   - Maintain data consistency during migration
-   - Update Popular-Rank distribution
-
-3. **Update Query Router** (`src/domains/query/router.py`)
-   - Add DBMS3 routing rules
-   - Support 3-way parallel queries
-   - Handle new region conditions
-
-4. **Update Monitoring** (`src/cli/monitor.py`)
-   - Show 3 DBMS in status reports
-   - Display 3-way data distribution
-   - Track workload across all nodes
-
-**Demo Value:**
-- Show data distributed across 3 DBMS
-- Query merges results from 3 sources
-- Demonstrates horizontal scalability
-
-**Files to modify:**
-- `docker-compose.yml` - Add dbms3 service
-- `src/domains/query/router.py` - Add DBMS3 routing
-- `src/domains/query/executor.py` - Support 3 DBMS
-- `src/cli/expand.py` - Migration and rebalancing
-- `src/cli/monitor.py` - 3 DBMS monitoring
-
-## Phase 8: Documentation & Report
+## Phase 7: Documentation & Report
 
 **Required components:**
 1. **Technical Report** (research paper format)
@@ -144,13 +106,7 @@
    - Update executor for standby fallback
    - Testing failover scenarios
 
-2. **Phase 7: DBMS Expansion** (3-4 days)
-   - Add DBMS3 container
-   - Update routing for 3 DBMS
-   - Data migration and rebalancing
-   - Testing 3-way queries
-
-3. **Phase 8: Documentation** (1 day)
+2. **Phase 8: Documentation** (1 day)
    - Update report with advanced features
    - System manual updates
    - Demo preparation
@@ -168,9 +124,8 @@
 
 **Optional (bonus points):**
 - [ ] Hot/Cold Standby (fault tolerance)
-- [ ] DBMS Expansion (scalability)
 
-**Target:** All required + 2 optional features = Top marks
+**Target:** All required + 1 optional features = Top marks
 
 ## Technology Stack (Simple & Effective)
 

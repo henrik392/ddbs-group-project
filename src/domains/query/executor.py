@@ -1,19 +1,18 @@
 """Query executor for distributed queries."""
 
-import psycopg
 from typing import Any
+
+import psycopg
+
+from src.config import DBMS_CONNECTIONS, DBMS_STANDBY_MAP
 
 
 class QueryExecutor:
     """Executes queries on target DBMS."""
 
     def __init__(self):
-        self.connections = {
-            "DBMS1": "postgresql://ddbs:ddbs@localhost:5434/ddbs1",
-            "DBMS1-STANDBY": "postgresql://ddbs:ddbs@localhost:5435/ddbs1",
-            "DBMS2": "postgresql://ddbs:ddbs@localhost:5433/ddbs2",
-        }
-        self.standby_map = {"DBMS1": "DBMS1-STANDBY"}  # Primary -> Standby mapping
+        self.connections = DBMS_CONNECTIONS
+        self.standby_map = DBMS_STANDBY_MAP
 
     def execute(self, routing_plan: dict[str, Any]) -> list[dict[str, Any]]:
         """Execute query based on routing plan and return results."""

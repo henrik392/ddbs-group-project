@@ -12,9 +12,10 @@ wheels/
 # Local env
 .env
 
-db-generation/
+db-generation/*/
 .ruff_cache/
 generated_data/
+mock_articles/
 
 # LaTeX temporary files
 *.aux

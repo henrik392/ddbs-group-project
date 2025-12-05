@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(cat:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(for dir in /Users/henrikkvamme/development/uni/tsinghua/ddbs/ddbs-group-project/db-generation/bbc_news_texts/*/)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,27 @@
 # Screenshot Guide for Report
 
-## Screenshots Needed (10 total)
+This guide helps you capture all screenshots needed for a comprehensive project report demonstrating the distributed database system with real BBC news data, HDFS storage, and production-scale datasets.
 
+## Prerequisites
+
+Before taking screenshots, ensure the system is set up with production data:
+
+```bash
+# Complete setup with 10G dataset (real BBC news, images, videos)
+make setup-10g
+
+# Or use manual commands:
+# make setup && make init-db && make generate-data-10g && make load-data && make upload-media && make populate-all
+```
+
+This will populate the system with:
+- 10,000 users (60% Beijing, 40% Hong Kong)
+- 10,000 articles with real BBC news texts
+- 1,000,000 read records
+- Real images and videos uploaded to HDFS
+- Be-Read and Popular-Rank tables populated
+
+## Screenshots Needed (10 total)
 ### Hot-Cold Standby & Fault Tolerance
 
 #### 1. Standby System Status
@@ -266,10 +286,14 @@ Or in LaTeX:
 Run these commands in order and screenshot each:
 
 ```bash
+# SETUP (if not already done)
+# make setup-10g  # This takes a while, run once at the beginning
+
 # HOT-COLD STANDBY DEMONSTRATION
 
 # 1. Standby system status (all three DBMS)
-clear && uv run python src/cli/monitor.py status
+clear && make monitor
+# Alternative: clear && uv run python src/cli/monitor.py status
 
 # 2. Failover test - before failure (normal operation)
 clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
@@ -285,13 +309,16 @@ sleep 3
 # REGULAR OPERATIONS
 
 # 4. System deployment
-clear && docker compose ps
+clear && make ps
+# Alternative: clear && docker compose ps
 
 # 5. Data distribution
-clear && uv run python src/cli/monitor.py distribution
+clear && make verify-data
+# Alternative: clear && uv run python src/cli/monitor.py distribution
 
 # 6. System summary
-clear && uv run python src/cli/monitor.py summary
+clear && make monitor
+# Alternative: clear && uv run python src/cli/monitor.py summary
 
 # 7. Query execution
 clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" LIMIT 10"
@@ -303,8 +330,18 @@ clear && uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WH
 uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
 
 # 10. Top-5 articles
-clear && uv run python src/cli/query.py top5 --granularity daily
+clear && make top5-daily
+# Alternative: clear && uv run python src/cli/query.py top5 --granularity daily
 ```
+
+**Makefile Quick Commands:**
+- `make monitor` - System summary
+- `make verify-data` - Data distribution
+- `make top5-daily` - Daily popular articles
+- `make top5-weekly` - Weekly popular articles
+- `make top5-monthly` - Monthly popular articles
+- `make query-shell` - Interactive SQL shell
+- `make ps` - Running containers
 
 ## Done!
 

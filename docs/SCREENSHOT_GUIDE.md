@@ -1,356 +1,346 @@
-# Screenshot Guide for Report
+# Screenshot Guide for Report Submission
 
-This guide helps you capture all screenshots needed for a comprehensive project report demonstrating the distributed database system with real BBC news data, HDFS storage, and production-scale datasets.
+This guide provides the exact commands needed to capture all screenshots required for the project report. Each screenshot corresponds to a specific section in the report template.
 
 ## Prerequisites
 
-Before taking screenshots, ensure the system is set up with production data:
+**IMPORTANT:** Before taking screenshots, ensure the system is fully set up with production data:
 
 ```bash
-# Complete setup with 10G dataset (real BBC news, images, videos)
+# Complete setup (run once, takes 5-10 minutes)
 make setup-10g
-
-# Or use manual commands:
-# make setup && make init-db && make generate-data-10g && make load-data && make upload-media && make populate-all
 ```
 
-This will populate the system with:
+This populates the system with:
 - 10,000 users (60% Beijing, 40% Hong Kong)
 - 10,000 articles with real BBC news texts
 - 1,000,000 read records
 - Real images and videos uploaded to HDFS
-- Be-Read and Popular-Rank tables populated
+- Be-Read and Popular-Rank tables fully populated
 
-## Screenshots Needed (10 total)
-### Hot-Cold Standby & Fault Tolerance
-
-#### 1. Standby System Status
-**Command:**
-```bash
-uv run python src/cli/monitor.py status
-```
-
-**What it shows:**
-- DBMS1 (Primary) status
-- DBMS1-STANDBY (Hot standby) status
-- DBMS2 status
-- All three database instances online
-
-**Where to use:** Section 5.6 "Fault Tolerance - Hot-Cold Standby"
-
-**Caption:** "System status showing primary DBMS1 and hot standby DBMS1-STANDBY both online"
+**Screenshot Settings:**
+- Terminal font size: 14pt minimum
+- Terminal width: 100+ columns (avoid line wrapping)
+- Theme: Dark theme recommended for readability
+- Format: PNG (higher quality than JPEG)
+- Clear terminal before each screenshot: `clear`
 
 ---
 
-#### 2. Failover Test - Before Failure
+## Required Screenshots (8 Total)
+
+### 1. System Deployment (Report Section 5.1)
+
+**Purpose:** Show all infrastructure components running
+
 **Command:**
 ```bash
-# First query - DBMS1 is online
-uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
+clear && make ps
 ```
 
-**What it shows:** Normal query execution on primary DBMS1
+**Alternative:**
+```bash
+clear && docker compose ps
+```
 
-**Where to use:** Section 5.6 "Fault Tolerance - Failover Demonstration"
+**What to capture:**
+- All containers running (dbms1, dbms2, dbms1-standby, redis*, namenode, datanode*)
+- Status should be "Up" or "running"
+- Port mappings visible
 
-**Caption:** "Query execution on primary DBMS1 under normal operation"
+**Report caption:**
+```
+Figure 5.1: System deployment showing all distributed components operational (2 PostgreSQL instances, Redis cache, HDFS cluster with standby)
+```
 
 ---
 
-#### 3. Failover Test - During Failure
-**Commands:**
+### 2. Data Distribution Verification (Report Section 5.2)
+
+**Purpose:** Verify horizontal fragmentation is correctly implemented
+
+**Command:**
+```bash
+clear && make verify-data
+```
+
+**Alternative:**
+```bash
+clear && uv run python src/cli/monitor.py distribution
+```
+
+**What to capture:**
+- User counts: DBMS1 (Beijing) vs DBMS2 (Hong Kong)
+- Article counts: Science replicated on both, Technology on DBMS2 only
+- Read counts: Co-located with users
+- Be-Read and Popular-Rank distribution
+
+**Report caption:**
+```
+Figure 5.2: Data distribution verification showing correct horizontal fragmentation across DBMS1 and DBMS2
+```
+
+---
+
+### 3. Query Performance with Caching (Report Section 5.3)
+
+**Purpose:** Demonstrate cache performance
+
+**Step 1 - First execution (cache miss):**
+```bash
+clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 5"
+```
+
+**Step 2 - Second execution (cache hit):**
+```bash
+uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 5"
+```
+
+**What to capture:**
+- Both executions in one screenshot (scroll to show both)
+- OR take two separate screenshots
+- Second execution should show faster response time
+- Cache hit message visible
+
+**Report caption:**
+```
+Figure 5.3: Query performance comparison showing cache effectiveness (first execution vs cached execution with 60s TTL)
+```
+
+---
+
+### 4. Distributed Join - Top-5 Articles (Report Section 5.4)
+
+**Purpose:** Demonstrate distributed join between Popular-Rank and Article tables
+
+**Command:**
+```bash
+clear && make top5-daily
+```
+
+**Alternative:**
+```bash
+clear && uv run python src/cli/query.py top5 --granularity daily
+```
+
+**What to capture:**
+- Top-5 articles with complete details
+- Article titles, categories, abstracts
+- Image and text file paths
+- Ranking order maintained
+
+**Report caption:**
+```
+Figure 5.4: Top-5 daily popular articles with distributed join fetching article details from both DBMS
+```
+
+---
+
+### 5. System Monitoring (Report Section 5.5)
+
+**Purpose:** Show comprehensive monitoring capabilities
+
+**Command:**
+```bash
+clear && make monitor
+```
+
+**Alternative:**
+```bash
+clear && uv run python src/cli/monitor.py summary
+```
+
+**What to capture:**
+- DBMS status (all online)
+- Row counts per table
+- Redis cache status and hit rate
+- Clean, readable output
+
+**Report caption:**
+```
+Figure 5.5: System monitoring summary showing DBMS status, data metrics, and cache performance
+```
+
+---
+
+### 6. Hot/Cold Standby - System Status (Report Section 5.7)
+
+**Purpose:** Show DBMS1-STANDBY running alongside primary databases
+
+**Command:**
+```bash
+clear && uv run python src/cli/monitor.py status
+```
+
+**What to capture:**
+- DBMS1 (Primary): ONLINE, port 5434
+- DBMS1-STANDBY (Standby): ONLINE, port 5435
+- DBMS2: ONLINE, port 5433
+- All three databases operational
+
+**Report caption:**
+```
+Figure 5.6: System status showing primary DBMS1, hot standby DBMS1-STANDBY, and DBMS2 all operational
+```
+
+---
+
+### 7. Failover Test - Normal Operation (Report Section 5.7)
+
+**Purpose:** Show query execution on primary DBMS1 before failure
+
+**Command:**
+```bash
+clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
+```
+
+**What to capture:**
+- Query executing successfully
+- Response time shown
+- Results returned correctly
+- No error messages
+
+**Report caption:**
+```
+Figure 5.7: Query execution on primary DBMS1 under normal operation before failover test
+```
+
+---
+
+### 8. Failover Test - Automatic Failover (Report Section 5.7)
+
+**Purpose:** Demonstrate automatic failover to standby when primary fails
+
+**Commands (run in sequence):**
 ```bash
 # Stop primary DBMS1
 docker stop ddbs-group-project-dbms1-1
 
-# Same query - should automatically failover
+# Wait a moment, then execute same query
 uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
 ```
 
-**What it shows:**
+**What to capture:**
 - Warning message: "⚠ DBMS1 failed, trying standby DBMS1-STANDBY"
-- Same data retrieved from standby
+- Query succeeds with results from standby
+- Same data as before (demonstrating consistency)
 - Zero downtime
 
-**Where to use:** Section 5.6 "Fault Tolerance - Automatic Failover"
+**IMPORTANT:** After taking this screenshot, restart DBMS1:
+```bash
+docker start ddbs-group-project-dbms1-1
+```
 
-**Caption:** "Automatic failover to DBMS1-STANDBY when primary DBMS1 fails"
+**Report caption:**
+```
+Figure 5.8: Automatic failover to DBMS1-STANDBY when primary DBMS1 fails, demonstrating fault tolerance with zero downtime
+```
 
 ---
 
-### Regular Operations
+## Screenshot Checklist
 
-#### 4. System Deployment
-**Command:**
-```bash
-docker compose ps
+Before submitting, verify you have:
+- [ ] Screenshot 1: System deployment (docker ps)
+- [ ] Screenshot 2: Data distribution (monitor distribution)
+- [ ] Screenshot 3: Query caching (first vs cached execution)
+- [ ] Screenshot 4: Distributed join (top5 daily)
+- [ ] Screenshot 5: System monitoring (monitor summary)
+- [ ] Screenshot 6: Standby status (all 3 DBMS online)
+- [ ] Screenshot 7: Normal operation (query before failure)
+- [ ] Screenshot 8: Failover test (automatic failover)
+
+## File Naming Convention
+
+Save screenshots as:
 ```
-
-**What it shows:** All services running (dbms1, dbms1-standby, dbms2, redis, minio)
-
-**Where to use:** Section 5.1 "System Deployment"
-
-**Caption:** "System deployment showing all distributed components operational including hot standby"
-
----
-
-#### 5. Data Distribution
-**Command:**
-```bash
-uv run python src/cli/monitor.py distribution
-```
-
-**What it shows:**
-- Fragmentation rules
-- Actual row counts per DBMS
-- Table sizes
-
-**Where to use:** Section 5.2 "Data Distribution"
-
-**Caption:** "Data distribution across DBMS1 and DBMS2 showing correct horizontal fragmentation"
-
----
-
-#### 6. System Summary
-**Command:**
-```bash
-uv run python src/cli/monitor.py summary
-```
-
-**What it shows:**
-- DBMS status (both online)
-- Total row counts
-- Cache hit rate
-
-**Where to use:** Section 5.5 "Monitoring Capabilities"
-
-**Caption:** "System monitoring summary showing operational status and data metrics"
-
----
-
-#### 7. Query Execution
-**Command:**
-```bash
-uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" LIMIT 10"
-```
-
-**What it shows:** Query results from distributed database
-
-**Where to use:** Section 5.3 "Query Performance"
-
-**Caption:** "Distributed query execution merging results from both DBMS"
-
----
-
-#### 8. Cache Performance
-**Two screenshots - run same query twice:**
-
-**First run:**
-```bash
-uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
-```
-
-**Second run (same query):**
-```bash
-uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
-```
-
-**What it shows:**
-- First: Normal execution
-- Second: Cache hit message
-
-**Where to use:** Section 5.3 "Query Performance" (cache demonstration)
-
-**Caption:** "Query cache demonstration: first execution vs. cached execution"
-
----
-
-#### 9. Top-5 Popular Articles (Distributed Join)
-**Command:**
-```bash
-uv run python src/cli/query.py top5 --granularity daily
-```
-
-**What it shows:**
-- Top-5 articles with complete details
-- Article title, category, abstract
-- Image/video paths
-
-**Where to use:** Section 5.4 "Distributed Join"
-
-**Caption:** "Top-5 daily popular articles with distributed join across DBMS"
-
----
-
-#### 10. Interactive Query Shell (Optional but good)
-**Command:**
-```bash
-uv run python src/cli/query.py execute -i
-```
-
-**Then type a few queries in the shell**
-
-**What it shows:** Interactive session with multiple queries
-
-**Where to use:** Section 5.3 "Query Performance"
-
-**Caption:** "Interactive query shell for ad-hoc distributed queries"
-
----
-
-## How to Take Screenshots
-
-### macOS:
-- **Full screen:** Cmd + Shift + 3
-- **Selection:** Cmd + Shift + 4
-- **Window:** Cmd + Shift + 4, then press Space, click window
-
-### Windows:
-- **Full screen:** Windows + PrtScn
-- **Snipping Tool:** Windows + Shift + S
-
-### Linux:
-- **GNOME:** PrtScn or Shift + PrtScn
-- **KDE:** Spectacle (built-in)
-
-## Screenshot Tips
-
-1. **Clear terminal history** before taking screenshots:
-   ```bash
-   clear
-   ```
-
-2. **Use full commands** (not aliases) so they're clear
-
-3. **Crop** to show only relevant terminal output
-
-4. **Readable font size** - 14pt or larger
-
-5. **Consistent terminal theme** - light or dark (dark looks more professional)
-
-6. **Save as PNG** for best quality
-
-7. **Name files clearly:**
-   - `01_standby_status.png`
-   - `02_failover_before.png`
-   - `03_failover_during.png`
-   - `04_docker_ps.png`
-   - `05_distribution.png`
-   - `06_summary.png`
-   - `07_query_execution.png`
-   - `08_cache_hit.png`
-   - `09_top5_articles.png`
-   - `10_interactive_shell.png`
-
-## Directory Structure
-
-Save screenshots in:
-```
-docs/
-├── screenshots/
-│   ├── 01_standby_status.png
-│   ├── 02_failover_before.png
-│   ├── 03_failover_during.png
-│   ├── 04_docker_ps.png
-│   ├── 05_distribution.png
-│   ├── 06_summary.png
-│   ├── 07_query_execution.png
-│   ├── 08_cache_hit.png
-│   ├── 09_top5_articles.png
-│   └── 10_interactive_shell.png
-├── REPORT_TEMPLATE.md
-├── MANUAL.md
-└── ...
+docs/screenshots/
+├── 01_system_deployment.png
+├── 02_data_distribution.png
+├── 03_query_caching.png
+├── 04_distributed_join.png
+├── 05_system_monitoring.png
+├── 06_standby_status.png
+├── 07_normal_operation.png
+└── 08_failover_test.png
 ```
 
 ## Inserting Screenshots in Report
 
-If converting to PDF/Word, use markdown image syntax:
-
+**Markdown:**
 ```markdown
-![Caption text](screenshots/01_docker_ps.png)
+![Figure 5.1: System deployment](screenshots/01_system_deployment.png)
 ```
 
-Or in LaTeX:
-
+**LaTeX:**
 ```latex
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\textwidth]{screenshots/01_docker_ps.png}
+\includegraphics[width=0.9\textwidth]{screenshots/01_system_deployment.png}
 \caption{System deployment showing all distributed components operational}
+\label{fig:system_deployment}
 \end{figure}
 ```
 
-## Quick Screenshot Session (7 minutes)
+## Quick Screenshot Session Script
 
-Run these commands in order and screenshot each:
+Run all commands in sequence and screenshot each (total time: ~5 minutes):
 
 ```bash
-# SETUP (if not already done)
-# make setup-10g  # This takes a while, run once at the beginning
+# Setup (if not already done)
+make setup-10g
 
-# HOT-COLD STANDBY DEMONSTRATION
+# 1. System deployment
+clear && make ps
 
-# 1. Standby system status (all three DBMS)
+# 2. Data distribution
+clear && make verify-data
+
+# 3. Query caching (run twice)
+clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 5"
+uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 5"
+
+# 4. Distributed join
+clear && make top5-daily
+
+# 5. System monitoring
 clear && make monitor
-# Alternative: clear && uv run python src/cli/monitor.py status
 
-# 2. Failover test - before failure (normal operation)
+# 6. Standby status
+clear && uv run python src/cli/monitor.py status
+
+# 7. Normal operation
 clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
 
-# 3. Failover test - during failure
+# 8. Failover test
 docker stop ddbs-group-project-dbms1-1
 uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
 
-# IMPORTANT: Restart DBMS1 before continuing
+# IMPORTANT: Restart DBMS1
 docker start ddbs-group-project-dbms1-1
-sleep 3
-
-# REGULAR OPERATIONS
-
-# 4. System deployment
-clear && make ps
-# Alternative: clear && docker compose ps
-
-# 5. Data distribution
-clear && make verify-data
-# Alternative: clear && uv run python src/cli/monitor.py distribution
-
-# 6. System summary
-clear && make monitor
-# Alternative: clear && uv run python src/cli/monitor.py summary
-
-# 7. Query execution
-clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" LIMIT 10"
-
-# 8. Cache (first run)
-clear && uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
-
-# 9. Cache (second run - same query)
-uv run python src/cli/query.py execute --sql "SELECT * FROM \"user\" WHERE region='Beijing' LIMIT 5"
-
-# 10. Top-5 articles
-clear && make top5-daily
-# Alternative: clear && uv run python src/cli/query.py top5 --granularity daily
 ```
 
-**Makefile Quick Commands:**
-- `make monitor` - System summary
-- `make verify-data` - Data distribution
-- `make top5-daily` - Daily popular articles
-- `make top5-weekly` - Weekly popular articles
-- `make top5-monthly` - Monthly popular articles
-- `make query-shell` - Interactive SQL shell
-- `make ps` - Running containers
+---
 
-## Done!
+## Troubleshooting
 
-You should now have all screenshots needed for a complete report that demonstrates:
-- ✅ Hot-cold standby fault tolerance
-- ✅ Automatic failover mechanism
-- ✅ System deployment with standby
-- ✅ Data partitioning
-- ✅ Query execution
-- ✅ Cache performance
-- ✅ Distributed joins
-- ✅ Monitoring capabilities
+**Issue:** Screenshots are too small to read
+- **Solution:** Increase terminal font size to 14pt or larger
+
+**Issue:** Text is wrapped/truncated
+- **Solution:** Increase terminal width to 120+ columns
+
+**Issue:** DBMS not responding
+- **Solution:** Run `make monitor` to check status, restart with `make setup` if needed
+
+**Issue:** No data after restart
+- **Solution:** Data persists in Docker volumes, but you may need to run `make setup-10g` again
+
+---
+
+## Final Notes
+
+- Take screenshots in a clean environment (no other terminal output visible)
+- Ensure all timestamps are recent (showing the system is actively running)
+- Double-check that all required data is visible in each screenshot
+- Keep raw screenshots (PNG format) in case you need to recrop/adjust

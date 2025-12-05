@@ -7,16 +7,38 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Local env
 .env
+.env.local
 
-db-generation/*/
-.ruff_cache/
+# Generated data (large files - generated output, not source data)
+db-generation/articles/
 generated_data/
 mock_articles/
 production_articles/
+
+# Keep source data (bbc_news_texts, image, video) in repo
+# These are needed for production data generation
+
+# Linter cache
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # LaTeX temporary files
 *.aux
@@ -28,3 +50,8 @@ production_articles/
 *.synctex.gz
 *.fdb_latexmk
 *.fls
+
+# Temporary files
+*.tmp
+*.temp
+.~*

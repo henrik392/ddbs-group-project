@@ -23,9 +23,21 @@ DBMS_TO_DATACENTER = {
 
 # Redis Configuration
 REDIS_CONNECTIONS = {
-    "DC1": {"host": "localhost", "port": 6379},
-    "DC2": {"host": "localhost", "port": 6381},
-    "STANDBY": {"host": "localhost", "port": 6380},  # Shared standby
+    "DC1": {
+        "host": "localhost",
+        "port": 6379,
+        "password": "ddbs_redis_secure_2024_dc1",
+    },
+    "DC2": {
+        "host": "localhost",
+        "port": 6381,
+        "password": "ddbs_redis_secure_2024_dc2",
+    },
+    "STANDBY": {
+        "host": "localhost",
+        "port": 6380,
+        "password": "ddbs_redis_secure_2024_standby",
+    },  # Shared standby
 }
 
 # Redis Standby Mapping

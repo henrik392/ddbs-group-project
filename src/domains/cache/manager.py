@@ -25,6 +25,7 @@ class CacheManager:
             self.connections[datacenter] = redis.Redis(
                 host=config["host"],
                 port=config["port"],
+                password=config["password"],
                 decode_responses=True,
                 socket_connect_timeout=2,
                 socket_timeout=2,

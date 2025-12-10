@@ -20,23 +20,29 @@ services:
   # Data Center 1 (Beijing) - Primary Cache
   redis1:
     image: redis:7
-    ports: ["6379:6379"]
-    volumes: [redis1:/data]
-    command: redis-server --appendonly yes
+    ports: ["127.0.0.1:6379:6379"]
+    volumes:
+      - redis1:/data
+      - ./redis1.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
   # Data Center 2 (Hong Kong) - Primary Cache
   redis2:
     image: redis:7
-    ports: ["6381:6379"]
-    volumes: [redis2:/data]
-    command: redis-server --appendonly yes
+    ports: ["127.0.0.1:6381:6379"]
+    volumes:
+      - redis2:/data
+      - ./redis2.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
   # Shared Standby Cache (can replace either DC1 or DC2)
   redis-standby:
     image: redis:7
-    ports: ["6380:6379"]
-    volumes: [redis_standby:/data]
-    command: redis-server --appendonly yes
+    ports: ["127.0.0.1:6380:6379"]
+    volumes:
+      - redis_standby:/data
+      - ./redis-standby.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
   # HDFS NameNode
   namenode:

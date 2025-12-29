@@ -27,7 +27,7 @@ This populates the system with:
 
 ---
 
-## Required Screenshots (8 Total)
+## Required Screenshots (7 Total)
 
 ### 1. System Deployment (Report Section 5.1)
 
@@ -185,46 +185,28 @@ Figure 5.6: System status showing primary DBMS1, hot standby DBMS1-STANDBY, and 
 
 ---
 
-### 7. Failover Test - Normal Operation (Report Section 5.7)
+### 7. Failover Test - Normal Operation and Automatic Failover (Report Section 5.7)
 
-**Purpose:** Show query execution on primary DBMS1 before failure
+**Purpose:** Demonstrate automatic failover to standby when primary fails, showing both normal operation and failover in one screenshot
 
-**Command:**
+**Commands (run in sequence without clearing terminal):**
 ```bash
+# First: Show normal operation on primary DBMS1
 clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
-```
 
-**What to capture:**
-- Query executing successfully
-- Response time shown
-- Results returned correctly
-- No error messages
-
-**Report caption:**
-```
-Figure 5.7: Query execution on primary DBMS1 under normal operation before failover test
-```
-
----
-
-### 8. Failover Test - Automatic Failover (Report Section 5.7)
-
-**Purpose:** Demonstrate automatic failover to standby when primary fails
-
-**Commands (run in sequence):**
-```bash
-# Stop primary DBMS1
+# Second: Stop primary DBMS1
 docker stop ddbs-group-project-dbms1-1
 
-# Wait a moment, then execute same query
+# Third: Execute same query - should automatically failover to standby
 uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
 ```
 
 **What to capture:**
-- Warning message: "⚠ DBMS1 failed, trying standby DBMS1-STANDBY"
+- **First execution:** Query succeeds on primary DBMS1 with results
+- **Second execution:** Warning message "⚠ DBMS1 failed, trying standby DBMS1-STANDBY"
 - Query succeeds with results from standby
 - Same data as before (demonstrating consistency)
-- Zero downtime
+- Zero downtime between primary failure and standby takeover
 
 **IMPORTANT:** After taking this screenshot, restart DBMS1:
 ```bash
@@ -233,7 +215,7 @@ docker start ddbs-group-project-dbms1-1
 
 **Report caption:**
 ```
-Figure 5.8: Automatic failover to DBMS1-STANDBY when primary DBMS1 fails, demonstrating fault tolerance with zero downtime
+Figure 5.7: Failover test showing query execution on primary DBMS1, followed by automatic failover to DBMS1-STANDBY when primary fails, demonstrating fault tolerance with zero downtime
 ```
 
 ---
@@ -247,8 +229,7 @@ Before submitting, verify you have:
 - [ ] Screenshot 4: Distributed join (top5 daily)
 - [ ] Screenshot 5: System monitoring (monitor summary)
 - [ ] Screenshot 6: Standby status (all 3 DBMS online)
-- [ ] Screenshot 7: Normal operation (query before failure)
-- [ ] Screenshot 8: Failover test (automatic failover)
+- [ ] Screenshot 7: Failover test (normal operation + automatic failover)
 
 ## File Naming Convention
 
@@ -261,8 +242,7 @@ docs/screenshots/
 ├── 04_distributed_join.png
 ├── 05_system_monitoring.png
 ├── 06_standby_status.png
-├── 07_normal_operation.png
-└── 08_failover_test.png
+└── 07_failover_test.png
 ```
 
 ## Inserting Screenshots in Report
@@ -309,10 +289,8 @@ clear && make monitor
 # 6. Standby status
 clear && uv run python src/cli/monitor.py status
 
-# 7. Normal operation
+# 7. Failover test (normal + automatic failover)
 clear && uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
-
-# 8. Failover test
 docker stop ddbs-group-project-dbms1-1
 uv run python src/cli/query.py execute --sql "SELECT uid, name, region FROM \"user\" WHERE region='Beijing' LIMIT 3" --no-cache
 

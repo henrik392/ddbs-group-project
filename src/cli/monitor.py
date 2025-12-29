@@ -86,7 +86,7 @@ def status():
     # Check Redis
     print("[REDIS CACHE] localhost:6379")
     try:
-        r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+        r = redis.Redis(host="localhost", port=6379, password="ddbs_redis_secure_2024_dc1", decode_responses=True)
         r.ping()
         info = r.info()
         print("  Status: ✓ ONLINE")
@@ -184,7 +184,7 @@ def workload():
     print()
 
     try:
-        r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+        r = redis.Redis(host="localhost", port=6379, password="ddbs_redis_secure_2024_dc1", decode_responses=True)
 
         # Get all cache keys
         keys = r.keys("query:*")
@@ -316,7 +316,7 @@ def summary():
     print("-" * 60)
 
     try:
-        r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+        r = redis.Redis(host="localhost", port=6379, password="ddbs_redis_secure_2024_dc1", decode_responses=True)
         r.ping()
         keys = r.keys("query:*")
         info = r.info("stats")

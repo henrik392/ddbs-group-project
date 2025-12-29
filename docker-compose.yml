@@ -2,19 +2,19 @@ services:
   dbms1:
     image: postgres:16
     environment: [POSTGRES_USER=ddbs, POSTGRES_PASSWORD=ddbs, POSTGRES_DB=ddbs1]
-    ports: ["5434:5432"]
+    ports: ["127.0.0.1:5434:5432"]
     volumes: [dbms1:/var/lib/postgresql/data]
 
   dbms-standby:
     image: postgres:16
     environment: [POSTGRES_USER=ddbs, POSTGRES_PASSWORD=ddbs, POSTGRES_DB=ddbs1]
-    ports: ["5435:5432"]
+    ports: ["127.0.0.1:5435:5432"]
     volumes: [dbms_standby:/var/lib/postgresql/data]
 
   dbms2:
     image: postgres:16
     environment: [POSTGRES_USER=ddbs, POSTGRES_PASSWORD=ddbs, POSTGRES_DB=ddbs2]
-    ports: ["5433:5432"]
+    ports: ["127.0.0.1:5433:5432"]
     volumes: [dbms2:/var/lib/postgresql/data]
 
   # Data Center 1 (Beijing) - Primary Cache
@@ -47,7 +47,7 @@ services:
   # HDFS NameNode
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
-    ports: ["9870:9870", "9000:9000"]
+    ports: ["127.0.0.1:9870:9870", "127.0.0.1:9000:9000"]
     volumes: [namenode:/hadoop/dfs/name]
     environment:
       - CLUSTER_NAME=ddbs-cluster
@@ -58,7 +58,7 @@ services:
   datanode1:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     hostname: localhost
-    ports: ["9864:9864"]
+    ports: ["127.0.0.1:9864:9864"]
     volumes: [datanode1:/hadoop/dfs/data]
     environment:
       - CORE_CONF_fs_defaultFS=hdfs://namenode:9000

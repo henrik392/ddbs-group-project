@@ -37,37 +37,39 @@ make help
 
 ## Alternative: Manual Setup
 
+**Note:** Manual commands require `PYTHONPATH=.` to be set. See below for examples.
+
 ### 1. Setup Infrastructure
 ```bash
 # Install dependencies
 uv sync
 
-# Start infrastructure (PostgreSQL × 2, Redis, HDFS)
+# Start infrastructure (PostgreSQL × 3, Redis × 3, HDFS)
 docker compose up -d
 ```
 
 ### 2. Initialize Database
 ```bash
 # Create schemas on both DBMS
-uv run python src/cli/init_db.py
+PYTHONPATH=. uv run python src/cli/init_db.py
 ```
 
 ### 3. Generate and Load Data
 ```bash
 # Generate production data with real BBC news texts, images, and videos
-uv run python db-generation/generate_production_data.py --scale 10G
+PYTHONPATH=. uv run python db-generation/generate_production_data.py --scale 10G
 
 # Load partitioned data into DBMS
-uv run python src/cli/load_data.py bulk-load --sql-dir generated_data
+PYTHONPATH=. uv run python src/cli/load_data.py bulk-load --sql-dir generated_data
 
 # Upload media files to HDFS
-uv run python src/cli/load_data.py upload-media --mock-dir production_articles
+PYTHONPATH=. uv run python src/cli/load_data.py upload-media --mock-dir production_articles
 
 # Populate Be-Read table
-uv run python src/cli/populate_beread.py
+PYTHONPATH=. uv run python src/cli/populate_beread.py
 
 # Populate Popular-Rank table
-uv run python src/cli/populate_popularrank.py
+PYTHONPATH=. uv run python src/cli/populate_popularrank.py
 ```
 
 ### 4. Query Data

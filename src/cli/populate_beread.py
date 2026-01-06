@@ -15,9 +15,11 @@ def populate_beread():
 
     # Connect to both DBMS
     dbms1_conn = DBMS_CONNECTIONS["DBMS1"]
+    dbms1_standby_conn = DBMS_CONNECTIONS["DBMS-STANDBY"]
     dbms2_conn = DBMS_CONNECTIONS["DBMS2"]
 
     conn1 = psycopg.connect(dbms1_conn)
+    conn1_standby = psycopg.connect(dbms1_standby_conn)
     conn2 = psycopg.connect(dbms2_conn)
 
     try:
@@ -100,6 +102,7 @@ def populate_beread():
         timestamp = int(time.time() * 1000)
 
         inserted_dbms1 = 0
+        inserted_dbms1_standby = 0
         inserted_dbms2 = 0
 
         for aid, data in stats.items():
@@ -137,9 +140,12 @@ def populate_beread():
             if category == "science":
                 with conn1.cursor() as cur:
                     cur.execute(insert_sql, values)
+                with conn1_standby.cursor() as cur:
+                    cur.execute(insert_sql, values)
                 with conn2.cursor() as cur:
                     cur.execute(insert_sql, values)
                 inserted_dbms1 += 1
+                inserted_dbms1_standby += 1
                 inserted_dbms2 += 1
             else:  # Technology articles go to DBMS2 only
                 with conn2.cursor() as cur:
@@ -148,15 +154,20 @@ def populate_beread():
 
         # Commit transactions
         conn1.commit()
+        conn1_standby.commit()
         conn2.commit()
 
         print(f"  DBMS1: {inserted_dbms1} Be-Read records (science articles)")
+        print(
+            f"  DBMS1-STANDBY: {inserted_dbms1_standby} Be-Read records (science articles)"
+        )
         print(f"  DBMS2: {inserted_dbms2} Be-Read records (science + technology)")
 
         print("\n✓ Be-Read table population complete!")
 
     finally:
         conn1.close()
+        conn1_standby.close()
         conn2.close()
 
 
@@ -167,6 +178,7 @@ def verify_beread():
     from src.config import DBMS_CONNECTIONS
 
     dbms1_conn = DBMS_CONNECTIONS["DBMS1"]
+    dbms1_standby_conn = DBMS_CONNECTIONS["DBMS-STANDBY"]
     dbms2_conn = DBMS_CONNECTIONS["DBMS2"]
 
     # Check DBMS1
@@ -192,6 +204,23 @@ def verify_beread():
             cur.execute('SELECT COUNT(*) FROM "be_read"')
             count = cur.fetchone()[0]
             print(f"\nDBMS2 Be-Read records: {count}")
+
+            if count > 0:
+                cur.execute(
+                    'SELECT aid, readNum, agreeNum, commentNum, shareNum FROM "be_read" ORDER BY readNum DESC LIMIT 3'
+                )
+                print("  Top 3 articles by reads:")
+                for aid, readNum, agreeNum, commentNum, shareNum in cur.fetchall():
+                    print(
+                        f"    Article {aid}: {readNum} reads, {agreeNum} agrees, {commentNum} comments, {shareNum} shares"
+                    )
+
+    # Check DBMS1-STANDBY
+    with psycopg.connect(dbms1_standby_conn) as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT COUNT(*) FROM "be_read"')
+            count = cur.fetchone()[0]
+            print(f"\nDBMS1-STANDBY Be-Read records: {count}")
 
             if count > 0:
                 cur.execute(

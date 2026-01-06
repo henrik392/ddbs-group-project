@@ -13,9 +13,11 @@ def populate_popularrank():
     print("Populating Popular-Rank table from Be-Read data...\n")
 
     dbms1_conn = DBMS_CONNECTIONS["DBMS1"]
+    dbms1_standby_conn = DBMS_CONNECTIONS["DBMS-STANDBY"]
     dbms2_conn = DBMS_CONNECTIONS["DBMS2"]
 
     conn1 = psycopg.connect(dbms1_conn)
+    conn1_standby = psycopg.connect(dbms1_standby_conn)
     conn2 = psycopg.connect(dbms2_conn)
 
     try:
@@ -55,7 +57,13 @@ def populate_popularrank():
                 insert_sql,
                 ("pr_daily", timestamp, "daily", ",".join(daily_top5)),
             )
+        with conn1_standby.cursor() as cur:
+            cur.execute(
+                insert_sql,
+                ("pr_daily", timestamp, "daily", ",".join(daily_top5)),
+            )
         print("  DBMS1: Inserted daily ranking")
+        print("  DBMS1-STANDBY: Inserted daily ranking")
 
         # Weekly and monthly rankings go to DBMS2
         with conn2.cursor() as cur:
@@ -71,12 +79,14 @@ def populate_popularrank():
 
         # Commit
         conn1.commit()
+        conn1_standby.commit()
         conn2.commit()
 
         print("\n✓ Popular-Rank table population complete!")
 
     finally:
         conn1.close()
+        conn1_standby.close()
         conn2.close()
 
 
@@ -85,6 +95,7 @@ def verify_popularrank():
     print("Verifying Popular-Rank table...\n")
 
     dbms1_conn = DBMS_CONNECTIONS["DBMS1"]
+    dbms1_standby_conn = DBMS_CONNECTIONS["DBMS-STANDBY"]
     dbms2_conn = DBMS_CONNECTIONS["DBMS2"]
 
     # Check DBMS1
@@ -108,6 +119,21 @@ def verify_popularrank():
             cur.execute('SELECT COUNT(*) FROM "popular_rank"')
             count = cur.fetchone()[0]
             print(f"\nDBMS2 Popular-Rank records: {count}")
+
+            if count > 0:
+                cur.execute(
+                    'SELECT temporalGranularity, articleAidList FROM "popular_rank"'
+                )
+                for granularity, aid_list in cur.fetchall():
+                    aids = aid_list.split(",")
+                    print(f"  {granularity}: {len(aids)} articles - {aids}")
+
+    # Check DBMS1-STANDBY
+    with psycopg.connect(dbms1_standby_conn) as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT COUNT(*) FROM "popular_rank"')
+            count = cur.fetchone()[0]
+            print(f"\nDBMS1-STANDBY Popular-Rank records: {count}")
 
             if count > 0:
                 cur.execute(
